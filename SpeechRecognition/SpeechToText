@@ -12,9 +12,11 @@ import time
 import math
 
 """
-Written by Sophie Li, 2016
+Written by Aaron Karp, 2017
+Adapted from Sophie Li, 2016
 http://blog.justsophie.com/python-speech-to-text-with-pocketsphinx/
 """
+
 
 class SpeechDetector:
     def __init__(self):
@@ -109,6 +111,25 @@ class SpeechDetector:
         [words.append(seg.word) for seg in self.decoder.seg()]
         return words
 
+    def check_phrase(self, words):
+        if "zig" not in words:
+            return
+        name_pos = words.index("zig")
+        command = words[name_pos:]
+        print "Command: ", command
+        known_words = []
+        unknown_words = []
+        for i in range(len(command)):
+            curr = command[i]
+            if "<" in curr:
+                unknown_words.append(curr)
+            elif "[" in curr:
+                unknown_words.append(curr)
+            else:
+                known_words.append(curr)
+        print "Known words: ", known_words
+        print "Unknown words: ", unknown_words
+
     def run(self):
         """
         Listens to Microphone, extracts phrases from it and calls pocketsphinx
@@ -149,6 +170,8 @@ class SpeechDetector:
                 r = self.decode_phrase(filename)
                 print "DETECTED: ", r
 
+                self.check_phrase(r)
+
                 # Removes temp audio file
                 os.remove(filename)
                 # Reset all
@@ -156,6 +179,7 @@ class SpeechDetector:
                 slid_win = deque(maxlen=self.SILENCE_LIMIT * rel)
                 prev_audio = deque(maxlen=0.5 * rel)
                 audio2send = []
+                stream = p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True, frames_per_buffer=self.CHUNK)
                 print "Listening ..."
 
             else:
