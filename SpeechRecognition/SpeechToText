@@ -49,6 +49,7 @@ class SpeechDetector:
         config.set_string('-hmm', os.path.join(MODELDIR, 'en-us/en-us'))
         config.set_string('-lm', os.path.join(MODELDIR, 'en-us/en-us.lm.bin'))
         config.set_string('-dict', os.path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
+	config.set_string('-kws', 'custom_dict_files/sample_keyword_list.txt')
 
         # Creaders decoder object for streaming data.
         self.decoder = Decoder(config)
@@ -108,8 +109,11 @@ class SpeechDetector:
             break
         self.decoder.end_utt()
         words = []
-        [words.append(seg.word) for seg in self.decoder.seg()]
-        return words
+        #[words.append(seg.word) for seg in self.decoder.seg()]
+        hypothesis = self.decoder.hyp()
+	for best, i in zip(self.decoder.nbest(), range(10)):
+    		words.append(best.hypstr + ' -- model score: ' + str(best.score))
+	return words
 
     def check_phrase(self, words):
         if "zig" not in words:
