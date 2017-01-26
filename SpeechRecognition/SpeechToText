@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
+from importlib import import_module
+
 from pocketsphinx.pocketsphinx import *
 from sphinxbase.sphinxbase import *
+
+import Interpreter as inter
 
 import os
 import pyaudio
@@ -10,6 +14,7 @@ import audioop
 from collections import deque
 import time
 import math
+
 
 """
 Written by Aaron Karp, 2017
@@ -49,7 +54,7 @@ class SpeechDetector:
         config.set_string('-hmm', os.path.join(MODELDIR, 'en-us/en-us'))
         config.set_string('-lm', os.path.join(MODELDIR, 'en-us/en-us.lm.bin'))
         config.set_string('-dict', os.path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
-	config.set_string('-kws', 'custom_dict_files/sample_keyword_list.txt')
+        config.set_string('-kws', 'custom_dict_files/sample_keyword_list.txt')
 
         # Creaders decoder object for streaming data.
         self.decoder = Decoder(config)
@@ -116,11 +121,10 @@ class SpeechDetector:
 	return words
 
     def check_phrase(self, words):
-        if "zig" not in words:
-            return
-        name_pos = words.index("zig")
-        command = words[name_pos:]
-        print "Command: ", command
+        idx_to_get = 0 # words.index("zig")
+        command = words[0]
+        print "Top Model: ", command
+        print
         known_words = []
         unknown_words = []
         for i in range(len(command)):
@@ -131,8 +135,11 @@ class SpeechDetector:
                 unknown_words.append(curr)
             else:
                 known_words.append(curr)
-        print "Known words: ", known_words
-        print "Unknown words: ", unknown_words
+        # print "Known words: ", known_words
+        # print "Unknown words: ", unknown_words
+        best_phrase = ''.join(known_words)
+        best_score = best_phrase.split(' ')[-1:]
+        return ' '.join(best_phrase.split(' ')[:-4])
 
     def run(self):
         """
@@ -172,9 +179,12 @@ class SpeechDetector:
                 print "Finished recording, decoding phrase"
                 filename = self.save_speech(list(prev_audio) + audio2send, p)
                 r = self.decode_phrase(filename)
-                print "DETECTED: ", r
+                print
+                print "TOP 10 DETECTED: ", r
+                print
 
-                self.check_phrase(r)
+                best_phrase = self.check_phrase(r)
+                inter.parse_phrase(best_phrase)
 
                 # Removes temp audio file
                 os.remove(filename)
