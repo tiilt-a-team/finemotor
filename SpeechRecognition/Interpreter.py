@@ -6,7 +6,8 @@ from EntityTrainer import nlp
 print('Imports loaded')
 print
 
-Et.train()
+Et.train('custom_dict_files/Shapes.txt', 'SHAPE')
+Et.train('custom_dict_files/Colors.txt', 'COLOR')
 
 
 def text2int(textnum, numwords={}):
@@ -44,20 +45,19 @@ def parse_phrase(phrase):
     doc = nlp(unicode(phrase, encoding="utf-8"))
     print ("Decoding : ", doc)
     objects = []
+    # Layout of adjective is as follows
+    # shape_one: [ [colors] [other] ]
     adjectives = []
     verbs = []
     quantity = []
-    unit = []
-    # Idea for adjective chaining...
-    # First find shape
-    # Look for instance of shape name in all NN's
-    # Find adjectives within that
     for ent in Et.match(doc):
         print(ent.label_, ent.text)
         if ent.label_ == u'QUANTITY':
             quantity.append(ent.text.lower())
         elif ent.label_ == u'SHAPE':
             objects.append(ent.text.lower())
+        elif ent.label_ == u'COLOR':
+            print ent.text.lower()
     for np in doc.noun_chunks:
         found_shape = False
         if np.root.tag_ == 'PRP':
@@ -71,10 +71,13 @@ def parse_phrase(phrase):
             if word.text.lower() in objects:
                 found_shape = True
         if found_shape:
-            temp_list = list()
+            temp_list = [[], []]
+            for ent in Et.match(doc):
+                if ent.label_ == u'COLOR' and ent.text in np.text:
+                    temp_list[0].append(ent.text.lower())
             for word in np:
                 if word.pos_ == 'ADJ':
-                    temp_list.append(word.text.lower())
+                    temp_list[1].append(word.text.lower())
             adjectives.append(temp_list)
 
         if np.root.head.tag_ != 'IN':
@@ -88,7 +91,7 @@ def parse_phrase(phrase):
 
 
 def take_action(verb, obj, desc, quantity):
-    print 'Calling ', verb, ' with arguments: ', ' '.join(desc), obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:])
+    print 'Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:])
 
 
 parse_phrase('Move the small blue circle down fifty pixels, then move it down by twenty pixels.')

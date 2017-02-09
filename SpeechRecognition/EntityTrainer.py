@@ -18,15 +18,15 @@ def merge_phrases(matcher, doc, i, matches):
         span.merge(u'NNP' if label else span.root.tag_, span.text, nlp.vocab.strings[label])
 
 
-def train():
-    with open('custom_dict_files/Shapes.txt') as f:
+def train(filename, label):
+    with open(filename) as f:
         content = f.readlines()
     # you may also want to remove whitespace characters like `\n` at the end of each line
     content = [x.strip() for x in content]
 
     key = 1
     for line in content:
-        matcher.add(entity_key=str(key), label='SHAPE', attrs={}, specs=[[{spacy.attrs.ORTH: line.decode('utf-8')}]], on_match=merge_phrases)
+        matcher.add(entity_key=str(key), label=label, attrs={}, specs=[[{spacy.attrs.ORTH: line.decode('utf-8')}]], on_match=merge_phrases)
         key += 1
 
 
