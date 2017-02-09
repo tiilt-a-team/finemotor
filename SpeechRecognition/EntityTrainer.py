@@ -1,8 +1,6 @@
 import spacy
 
-print("   Loading Spacy...")
 nlp = spacy.load('en')
-print ("   Spacy Loaded")
 
 matcher = spacy.matcher.Matcher(nlp.vocab)
 

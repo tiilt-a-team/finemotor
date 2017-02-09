@@ -3,8 +3,6 @@ from __future__ import print_function
 from pocketsphinx.pocketsphinx import *
 from sphinxbase.sphinxbase import *
 
-import Interpreter as Inter
-
 import os
 import pyaudio
 import wave
@@ -182,8 +180,9 @@ class SpeechDetector:
                 print()
 
                 best_phrase = self.check_phrase(r)
-                Inter.parse_phrase(best_phrase)
-
+                #############################################################################################################################
+                # Inter.parse_phrase(best_phrase)
+                #############################################################################################################################
                 # Removes temp audio file
                 os.remove(filename)
                 # Reset all

@@ -1,14 +1,7 @@
 from __future__ import print_function
 
-print('Running Interpreter.py')
-print()
-print('Loading imports...')
-
 import EntityTrainer as Et
 from EntityTrainer import nlp
-
-print('Imports loaded')
-print()
 
 Et.train('custom_dict_files/Shapes.txt', 'SHAPE')
 Et.train('custom_dict_files/Colors.txt', 'COLOR')
@@ -113,4 +106,4 @@ def take_action(verb, obj, desc, quantity, direction):
     print('Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:]), ' ', direction)
 
 
-parse_phrase('Move the big blue circle down fifty pixels, then move it up by twenty pixels. Enlarge the small yellow square by thirty pixels.')
+# parse_phrase('Move the big blue circle down fifty pixels, then move it up by twenty pixels. Enlarge the small yellow square by thirty pixels.')
