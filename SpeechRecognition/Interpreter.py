@@ -1,13 +1,18 @@
+from __future__ import print_function
+
+print('Running Interpreter.py')
+print()
 print('Loading imports...')
 
 import EntityTrainer as Et
 from EntityTrainer import nlp
 
 print('Imports loaded')
-print
+print()
 
 Et.train('custom_dict_files/Shapes.txt', 'SHAPE')
 Et.train('custom_dict_files/Colors.txt', 'COLOR')
+Et.train('custom_dict_files/Directions.txt', 'DIRECTION')
 
 
 def text2int(textnum, numwords={}):
@@ -43,33 +48,41 @@ def text2int(textnum, numwords={}):
 
 def parse_phrase(phrase):
     doc = nlp(unicode(phrase, encoding="utf-8"))
-    print ("Decoding : ", doc)
+    print("Decoding : ", doc)
     objects = []
+    possible_objects = []
     # Layout of adjective is as follows
     # shape_one: [ [colors] [other] ]
     adjectives = []
+    possible_adjectives = []
     verbs = []
     quantity = []
+    possible_quantity = []
+    direction = []
+    possible_direction = []
     for ent in Et.match(doc):
-        print(ent.label_, ent.text)
+        # print(ent.label_, ent.text)
         if ent.label_ == u'QUANTITY':
             quantity.append(ent.text.lower())
         elif ent.label_ == u'SHAPE':
-            objects.append(ent.text.lower())
-        elif ent.label_ == u'COLOR':
-            print ent.text.lower()
+            possible_objects.append(ent.text.lower())
+        elif ent.label_ == u'DIRECTION':
+            possible_direction.append(ent.text.lower())
     for np in doc.noun_chunks:
+        appended_direction = False
         found_shape = False
         if np.root.tag_ == 'PRP':
             if len(objects) > 0:  # If the preposition is referring to a previous object...
+                print("Preposition time! Objects thus far: ", objects)
                 objects.append(''.join(objects[-1:]))
                 adjectives.append(adjectives[-1:][0])
             else:
-                print ('ERROR: Unable to find object of prepositional phrase.')
+                print('ERROR: Unable to find object of prepositional phrase.')
                 return
         for word in np:
-            if word.text.lower() in objects:
+            if word.text.lower() in possible_objects:
                 found_shape = True
+                objects.append(word.text.lower())
         if found_shape:
             temp_list = [[], []]
             for ent in Et.match(doc):
@@ -79,19 +92,25 @@ def parse_phrase(phrase):
                 if word.pos_ == 'ADJ':
                     temp_list[1].append(word.text.lower())
             adjectives.append(temp_list)
-
         if np.root.head.tag_ != 'IN':
+            for child in np.root.head.children:
+                if child.text.lower() in possible_direction:
+                    direction.append(child.text.lower())
+                    appended_direction = True
             verbs.append(np.root.head.text.lower())
-    print 'verbs: ', verbs
-    print 'objects: ', objects
-    print 'descriptors: ', adjectives
-    print 'quantity: ', quantity
+            if not appended_direction:
+                direction.append(u'')
+    print('verbs: ', verbs)
+    print('objects: ', objects)
+    print('descriptors: ', adjectives)
+    print('quantities: ', quantity)
+    print('directions: ', direction)
     for i in range(len(verbs)):
-        take_action(verbs[i], objects[i], adjectives[i], quantity[i])
+        take_action(verbs[i], objects[i], adjectives[i], quantity[i], direction[i])
 
 
-def take_action(verb, obj, desc, quantity):
-    print 'Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:])
+def take_action(verb, obj, desc, quantity, direction):
+    print('Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:]), ' ', direction)
 
 
-parse_phrase('Move the small blue circle down fifty pixels, then move it down by twenty pixels.')
+parse_phrase('Move the big blue circle down fifty pixels, then move it up by twenty pixels. Enlarge the small yellow square by thirty pixels.')

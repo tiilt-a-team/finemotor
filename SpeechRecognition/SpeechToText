@@ -1,13 +1,9 @@
-#!/usr/bin/env python
-
-from importlib import import_module
+from __future__ import print_function
 
 from pocketsphinx.pocketsphinx import *
 from sphinxbase.sphinxbase import *
-#import pocketsphinx
-#import sphinxbase
 
-import Interpreter as inter
+import Interpreter as Inter
 
 import os
 import pyaudio
@@ -66,7 +62,7 @@ class SpeechDetector:
             is the avg of the .2 of the largest intensities recorded.
         """
 
-        print "Getting intensity values from mic."
+        print("Getting intensity values from mic.")
         p = pyaudio.PyAudio()
         stream = p.open(format=self.FORMAT,
                         channels=self.CHANNELS,
@@ -78,8 +74,8 @@ class SpeechDetector:
                   for x in range(num_samples)]
         values = sorted(values, reverse=True)
         r = sum(values[:int(num_samples * 0.2)]) / int(num_samples * 0.2)
-        print " Finished "
-        print " Average audio intensity is ", r
+        print(" Finished ")
+        print(" Average audio intensity is ", r)
         stream.close()
         p.terminate()
 
@@ -125,8 +121,8 @@ class SpeechDetector:
     def check_phrase(self, words):
         idx_to_get = 0  # words.index("zig")
         command = words[0]
-        print "Top Model: ", command
-        print
+        print("Top Model: ", command)
+        print()
         known_words = []
         unknown_words = []
         for i in range(len(command)):
@@ -157,7 +153,7 @@ class SpeechDetector:
                         rate=self.RATE,
                         input=True,
                         frames_per_buffer=self.CHUNK)
-        print "* Mic set up and listening. "
+        print("* Mic set up and listening. ")
 
         audio2send = []
         cur_data = ''  # current chunk of audio data
@@ -173,20 +169,20 @@ class SpeechDetector:
 
             if sum([x > self.THRESHOLD for x in slid_win]) > 0:
                 if started == False:
-                    print "Starting recording of phrase"
+                    print("Starting recording of phrase")
                     started = True
                 audio2send.append(cur_data)
 
             elif started:
-                print "Finished recording, decoding phrase"
+                print("Finished recording, decoding phrase")
                 filename = self.save_speech(list(prev_audio) + audio2send, p)
                 r = self.decode_phrase(filename)
-                print
-                print "TOP 10 DETECTED: ", r
-                print
+                print()
+                print("TOP 10 DETECTED: ", r)
+                print()
 
                 best_phrase = self.check_phrase(r)
-                inter.parse_phrase(best_phrase)
+                Inter.parse_phrase(best_phrase)
 
                 # Removes temp audio file
                 os.remove(filename)
@@ -197,12 +193,12 @@ class SpeechDetector:
                 audio2send = []
                 stream = p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True,
                                 frames_per_buffer=self.CHUNK)
-                print "Listening ..."
+                print("Listening ...")
 
             else:
                 prev_audio.append(cur_data)
 
-        print "* Done listening"
+        print("* Done listening")
         stream.close()
         p.terminate()
 

@@ -30,6 +30,10 @@ def train(filename, label):
         key += 1
 
 
+# Possible addition...
+# Have it fuzzy search the plain text across all entity names
+# If it's very similar, either create a new entity with the new name or 'autocorrect' to the existing entity name
+
 def match(doc):
     matcher(doc)
     ets = []
