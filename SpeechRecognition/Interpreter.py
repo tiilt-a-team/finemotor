@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import EntityTrainer as Et
 from EntityTrainer import nlp
+import logging
 
 Et.train('custom_dict_files/Shapes.txt', 'SHAPE')
 Et.train('custom_dict_files/Colors.txt', 'COLOR')
@@ -66,7 +67,6 @@ def parse_phrase(phrase):
         found_shape = False
         if np.root.tag_ == 'PRP':
             if len(objects) > 0:  # If the preposition is referring to a previous object...
-                print("Preposition time! Objects thus far: ", objects)
                 objects.append(''.join(objects[-1:]))
                 adjectives.append(adjectives[-1:][0])
             else:
@@ -93,13 +93,30 @@ def parse_phrase(phrase):
             verbs.append(np.root.head.text.lower())
             if not appended_direction:
                 direction.append(u'')
-    print('verbs: ', verbs)
-    print('objects: ', objects)
-    print('descriptors: ', adjectives)
-    print('quantities: ', quantity)
-    print('directions: ', direction)
+    # print('verbs: ', verbs)
+    # print('objects: ', objects)
+    # print('descriptors: ', adjectives)
+    # print('quantities: ', quantity)
+    # print('directions: ', direction)
     for i in range(len(verbs)):
-        take_action(verbs[i], objects[i], adjectives[i], quantity[i], direction[i])
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # NOTE: This will not work
+        # Noun phrases need to be grouped together cohesively
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        verb = verbs[i]
+        obj = None
+        if i < len(objects):
+            obj = objects[i]
+        adj = None
+        if i < len(adjectives):
+            adj = adjectives[i]
+        quant = None
+        if i < len(quantity):
+            quant = quantity[i]
+        dire = None
+        if i < len(direction):
+            dire = direction[i]
+        take_action(verb, obj, adj, quant, dire)
 
 
 def take_action(verb, obj, desc, quantity, direction):

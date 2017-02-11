@@ -94,7 +94,7 @@ class SpeechDetector:
         wf = wave.open(filename + '.wav', 'wb')
         wf.setnchannels(1)
         wf.setsampwidth(p.get_sample_size(pyaudio.paInt16))
-        wf.setframerate(16000)  # TODO make this value a function parameter?
+        wf.setframerate(self.RATE)  # TODO make this value a function parameter?
         wf.writeframes(data)
         wf.close()
         return filename + '.wav'
@@ -142,7 +142,6 @@ class SpeechDetector:
         Listens to Microphone, extracts phrases from it and calls pocketsphinx
         to decode the sound
         """
-        self.setup_mic()
 
         # Open stream
         p = pyaudio.PyAudio()
@@ -166,7 +165,7 @@ class SpeechDetector:
             slid_win.append(math.sqrt(abs(audioop.avg(cur_data, 4))))
 
             if sum([x > self.THRESHOLD for x in slid_win]) > 0:
-                if started == False:
+                if not started:
                     print("Starting recording of phrase")
                     started = True
                 audio2send.append(cur_data)
@@ -185,14 +184,10 @@ class SpeechDetector:
                 #############################################################################################################################
                 # Removes temp audio file
                 os.remove(filename)
+                stream.close()
                 # Reset all
-                started = False
-                slid_win = deque(maxlen=self.SILENCE_LIMIT * rel)
-                prev_audio = deque(maxlen=0.5 * rel)
-                audio2send = []
-                stream = p.open(format=self.FORMAT, channels=self.CHANNELS, rate=self.RATE, input=True,
-                                frames_per_buffer=self.CHUNK)
-                print("Listening ...")
+                print("Ending Loop")
+                return best_phrase
 
             else:
                 prev_audio.append(cur_data)
