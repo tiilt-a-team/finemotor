@@ -98,29 +98,36 @@ def parse_phrase(phrase):
     # print('descriptors: ', adjectives)
     # print('quantities: ', quantity)
     # print('directions: ', direction)
+    action_list = []
     for i in range(len(verbs)):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # NOTE: This will not work
         # Noun phrases need to be grouped together cohesively
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         verb = verbs[i]
-        obj = None
+        obj = ''
         if i < len(objects):
             obj = objects[i]
-        adj = None
+        else:
+            #action_list.append(None)
+            #continue
+            return None
+        adj = ''
         if i < len(adjectives):
             adj = adjectives[i]
-        quant = None
+        quant = ''
         if i < len(quantity):
             quant = quantity[i]
-        dire = None
+        dire = ''
         if i < len(direction):
             dire = direction[i]
-        take_action(verb, obj, adj, quant, dire)
+        action_list.append(take_action(verb, obj, adj, quant, dire))
+    return action_list
 
 
 def take_action(verb, obj, desc, quantity, direction):
     print('Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:]), ' ', direction)
+    return [verb, desc, obj, text2int(''.join(quantity.split(" ")[:-1])), direction]
 
 
 # parse_phrase('Move the big blue circle down fifty pixels, then move it up by twenty pixels. Enlarge the small yellow square by thirty pixels.')

@@ -24,6 +24,7 @@ def run_int(event, phrase_lock):
             event.clear()
         Int.parse_phrase(local_phrase)
 
+
 def run_spt(event, phrase_lock):
     """SpeechToTex thread worker function"""
     logging.debug('Starting Imports')
