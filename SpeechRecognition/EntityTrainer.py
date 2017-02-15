@@ -1,8 +1,16 @@
 import spacy
+import logging
 
-nlp = spacy.load('en')
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
+                    )
+
+logging.debug('Loading Dictionary...')
+nlp = spacy.load('en', add_vectors = False)
+logging.debug('Dictionary Loaded')
 
 matcher = spacy.matcher.Matcher(nlp.vocab)
+
 
 def merge_phrases(matcher, doc, i, matches):
     """

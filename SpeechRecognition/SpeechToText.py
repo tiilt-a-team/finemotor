@@ -38,20 +38,19 @@ class SpeechDetector:
         self.THRESHOLD = 4500
         self.num_phrases = -1
 
-        # These will need to be modified according to where the pocketsphinx folder is
-        # MODELDIR = "../../tools/pocketsphinx/model"
-        # DATADIR = "../../tools/pocketsphinx/test/data"
         MODELDIR = "libraries/pocketsphinx/model"
-        DATADIR = "libraries/pocketsphinx/test/data"
+        # DATADIR = "libraries/pocketsphinx/test/data"
 
         # Create a decoder with certain model
         config = Decoder.default_config()
+        # turn off pocketsphinx output
+        config.set_string('-logfn', '/dev/null')
         config.set_string('-hmm', os.path.join(MODELDIR, 'en-us/en-us'))
         config.set_string('-lm', os.path.join(MODELDIR, 'en-us/en-us.lm.bin'))
         config.set_string('-dict', os.path.join(MODELDIR, 'en-us/cmudict-en-us.dict'))
         config.set_string('-kws', 'custom_dict_files/sample_keyword_list.txt')
 
-        # Creaders decoder object for streaming data.
+        # Creates decoder object for streaming data.
         self.decoder = Decoder(config)
 
     def setup_mic(self, num_samples=50):

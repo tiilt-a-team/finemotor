@@ -14,15 +14,15 @@ global_phrase = ''
 
 
 def run_server():
-    print('Server started: Ctrl-C to kill')
+    logging.info('Server started: Ctrl-C to kill')
     try:
         while True:
             pipe, _ = sock.accept()
             pipe.settimeout(0.05)
             Comm.clients.append(pipe)
-            print(Comm.clients)
+            logging.debug(Comm.clients)
     except KeyboardInterrupt:
-        print('interrupted')
+        logging.exception('interrupted')
 
 
 def cleanup_server():
@@ -74,18 +74,18 @@ if __name__ == '__main__':
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    print('Socket created')
+    logging.debug('Socket created')
     try:
         sock.bind((HOST, PORT))
     except socket.error as msg:
-        print('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+        logging.exception('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
         sys.exit()
 
-    print('Socket bind complete')
+    logging.debug('Socket bind complete')
 
-    #Start listening on socket
+    # Start listening on socket
     sock.listen(0)
-    print('Socket now listening')
+    logging.debug('Socket now listening')
 
     sd = Spt.SpeechDetector()
     sd.setup_mic()
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         t.start()
         try:
             exit_cmd = 'exit'
-            print('Kill server and exit with "%s"' % exit_cmd)
+            logging.info('Kill server and exit with "%s"' % exit_cmd)
             while True:
                 cmd = sd.run()
                 if not cmd:
@@ -104,9 +104,9 @@ if __name__ == '__main__':
                 elif cmd == exit_cmd:
                     break
                 if not Comm.interpret_command(cmd):
-                        print('bad unrecognized command "%s"' % cmd)
+                        logging.exception('bad unrecognized command "%s"' % cmd)
         except EOFError:
-            print('EOF')
+            logging.exception('EOF')
         except KeyboardInterrupt:
             pass
     except Exception as e:

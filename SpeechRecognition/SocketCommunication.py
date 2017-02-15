@@ -3,10 +3,13 @@ import socket
 import threading
 import logging
 import time
-print("Importing Interpreter...")
+import logging
 import Interpreter as Inter
-print("Imported Interpreter")
 from pprint import pformat
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
+                    )
 
 _lock = threading.Lock()
 
@@ -25,7 +28,7 @@ def send_command(name, data={}):
     with _lock:
         data['__fnc__'] = name
         if debug:
-            print('Sending:', pformat(data))
+            logging.debug('Sending:', pformat(data))
         jdata = json.dumps(data) + '\n'
         for c in clients:
             try:
@@ -42,7 +45,6 @@ def send_command(name, data={}):
 def interpret_command(phrase):
     parsed = Inter.parse_phrase(phrase)
     if parsed is None:
-        logging.debug('unrecognized phrase %s' % phrase)
         return False
     for cmd in parsed:
         send_command(cmd[0])

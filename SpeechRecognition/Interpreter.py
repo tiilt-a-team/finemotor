@@ -4,6 +4,10 @@ import EntityTrainer as Et
 from EntityTrainer import nlp
 import logging
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='[%(levelname)s] (%(threadName)-10s) %(message)s',
+                    )
+
 Et.train('custom_dict_files/Shapes.txt', 'SHAPE')
 Et.train('custom_dict_files/Colors.txt', 'COLOR')
 Et.train('custom_dict_files/Directions.txt', 'DIRECTION')
@@ -42,7 +46,7 @@ def text2int(textnum, numwords={}):
 
 def parse_phrase(phrase):
     doc = nlp(unicode(phrase, encoding="utf-8"))
-    print("Decoding : ", doc)
+    logging.info("Decoding : ", doc)
     objects = []
     possible_objects = []
     # Layout of adjective is as follows
@@ -70,7 +74,7 @@ def parse_phrase(phrase):
                 objects.append(''.join(objects[-1:]))
                 adjectives.append(adjectives[-1:][0])
             else:
-                print('ERROR: Unable to find object of prepositional phrase.')
+                logging.exception('Unable to find object of prepositional phrase.')
                 return
         for word in np:
             if word.text.lower() in possible_objects:
@@ -126,7 +130,7 @@ def parse_phrase(phrase):
 
 
 def take_action(verb, obj, desc, quantity, direction):
-    print('Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:]), ' ', direction)
+    logging.info(20, 'Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:]), ' ', direction)
     return [verb, desc, obj, text2int(''.join(quantity.split(" ")[:-1])), direction]
 
 
