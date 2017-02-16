@@ -2,6 +2,7 @@ from __future__ import print_function
 import threading
 import logging
 import socket
+import time
 import sys
 import SpeechToText as Spt
 import SocketCommunication as Comm
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     logging.debug('Socket now listening')
 
     sd = Spt.SpeechDetector()
-    sd.setup_mic()
+    # sd.setup_mic()
 
     t = threading.Thread(target=run_server)
     t.daemon = True
@@ -98,7 +99,10 @@ if __name__ == '__main__':
             exit_cmd = 'exit'
             logging.info('Kill server and exit with "%s"' % exit_cmd)
             while True:
-                cmd = sd.run()
+                # FOR TESTING
+                cmd = raw_input('Type A Command ').strip().lower()
+                # FOR RUNNING
+                # cmd = sd.run()
                 if not cmd:
                     pass
                 elif cmd == exit_cmd:

@@ -28,7 +28,7 @@ def send_command(name, data={}):
     with _lock:
         data['__fnc__'] = name
         if debug:
-            logging.debug('Sending:', pformat(data))
+            logging.debug('Sending:' + pformat(data))
         jdata = json.dumps(data) + '\n'
         for c in clients:
             try:
@@ -47,5 +47,6 @@ def interpret_command(phrase):
     if parsed is None:
         return False
     for cmd in parsed:
+        # TODO: Convert data to dict structure
         send_command(cmd[0])
     return True

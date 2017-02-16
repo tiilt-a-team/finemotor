@@ -45,8 +45,11 @@ def text2int(textnum, numwords={}):
 
 
 def parse_phrase(phrase):
-    doc = nlp(unicode(phrase, encoding="utf-8"))
-    logging.info("Decoding : ", doc)
+    try:
+        doc = nlp(unicode(phrase, encoding="utf-8"))
+    except:
+        logging.exception('Unable to decode phrase')
+        exit()
     objects = []
     possible_objects = []
     # Layout of adjective is as follows
@@ -130,7 +133,7 @@ def parse_phrase(phrase):
 
 
 def take_action(verb, obj, desc, quantity, direction):
-    logging.info(20, 'Calling ', verb, ' with arguments: ', desc, ' -> ', obj, ', ', text2int(''.join(quantity.split(" ")[:-1])), ''.join(quantity.split(" ")[-1:]), ' ', direction)
+    #logging.info('' + str(20) + 'Calling '+ verb+ ' with arguments: '+ desc+ ' -> '+ obj+ ', '+ text2int(''.join(quantity.split(" ")[:-1]))+ ''.join(quantity.split(" ")[-1:])+ ' '+ direction)
     return [verb, desc, obj, text2int(''.join(quantity.split(" ")[:-1])), direction]
 
 
