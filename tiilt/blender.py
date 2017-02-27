@@ -46,7 +46,11 @@ class TIILTOperator(bpy.types.Operator):
         _commands = [
         self.view_top,
         self.view_bottom,
+        self.view_right,
+        self.view_left,
         self.add_cube,
+        self.add_cylinder,
+        self.clear_everything,
         ]
 
         self.commands = {f.__name__:f for f in _commands}
@@ -76,8 +80,20 @@ class TIILTOperator(bpy.types.Operator):
             return {'FINISHED'}
 
         if event.type == 'A':
-            #PART THAT NEEDS TO BE MODIFIED FOR TESTING
-            self.add_cube()
+            #JUST USED THIS FOR TESTING, CAN BE IGNORED FOR NOW
+            print('A pressed')
+            try:
+                cmd = read_command(self.sockfile)
+                if cmd:
+                    print('Found command')
+            except IOError as e:
+                loggin.excetion(e)
+            else:
+                if cmd:
+                    realCmd, kwargs = cmd
+                    if realCmd == 'add cube':
+                        bpy.ops.mesh.primitive_cube_add()
+
         if event.type == 'TIMER':
             try:
                 cmd = read_command(self.sockfile)
@@ -106,10 +122,17 @@ class TIILTOperator(bpy.types.Operator):
         self._timer = context.window_manager.event_timer_add(0.01, context.window)
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
-        # return context.window_manager.invoke_props_dialog(self)
 
-    def view_front(self):
-        self.view_numpad('FRONT')
+
+    def view_numpad(self, view):
+        if bpy.context.area.type == 'VIEW_3D':
+            bpy.ops.view3d.viewnumpad(type = view)
+
+    def view_left(self):
+        self.view_numpad('LEFT')
+
+    def view_right(self):
+        self.view_numpad('RIGHT')
 
     def view_top(self):
         self.view_numpad('TOP')
@@ -120,7 +143,12 @@ class TIILTOperator(bpy.types.Operator):
     def add_cube(self):
         bpy.ops.mesh.primitive_cube_add()
 
-    def render(self):
-        bpy.ops.render.render()
+    def add_cylinder(self):
+        bpy.ops.mesh.primitive_cylinder_add()
+
+    #TO DO
+    def clear_everything(self):
+        for o in bpy.context.selected_objects:
+            pass
 
 bpy.utils.register_class(TIILTOperator)

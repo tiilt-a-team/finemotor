@@ -26,11 +26,16 @@ def cleanup_server():
 		pipe.close()
 
 if __name__ == '__main__':
+
+	if '--debug' in sys.argv:
+		com.debug = True
+
+
 	sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 	sock.bind(('',1234))
 	sock.listen(0)
-	
+
 	if '-i' in sys.argv or '--interactive' in sys.argv:
 		t = threading.Thread(target = run_server)
 		t.daemon = True
@@ -40,7 +45,7 @@ if __name__ == '__main__':
 				exit_cmd = 'exit'
 				print 'Kill server and exit with "%s"' % exit_cmd
 				while True:
-					cmd = raw_input('(type) : ').strip().lower()
+					cmd = raw_input('(speak) : ').strip().lower()
 					if not cmd:
 						pass
 					elif cmd == exit_cmd:
