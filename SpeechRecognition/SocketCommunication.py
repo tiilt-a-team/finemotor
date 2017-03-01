@@ -45,7 +45,9 @@ def send_command(name, data={}):
 def interpret_command(phrase):
     parsed = Inter.parse_phrase(phrase)
     if parsed is None:
+        logging.debug('Parsed was none')
         return False
+    logging.debug(parsed)
     for cmd in parsed:
         # TODO: Convert data to dict structure
         send_command(cmd[0])

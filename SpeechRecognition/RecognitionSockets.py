@@ -89,7 +89,7 @@ if __name__ == '__main__':
     logging.debug('Socket now listening')
 
     sd = Spt.SpeechDetector()
-    # sd.setup_mic()
+    sd.setup_mic()
 
     t = threading.Thread(target=run_server)
     t.daemon = True
@@ -100,9 +100,9 @@ if __name__ == '__main__':
             logging.info('Kill server and exit with "%s"' % exit_cmd)
             while True:
                 # FOR TESTING
-                cmd = raw_input('Type A Command ').strip().lower()
+                # cmd = raw_input('Type A Command ').strip().lower()
                 # FOR RUNNING
-                # cmd = sd.run()
+                cmd = sd.run()
                 if not cmd:
                     pass
                 elif cmd == exit_cmd:

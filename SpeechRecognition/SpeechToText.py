@@ -46,8 +46,8 @@ class SpeechDetector:
         # turn off pocketsphinx output
         config.set_string('-logfn', '/dev/null')
         config.set_string('-hmm', os.path.join(MODELDIR, 'en-us/en-us'))
-        config.set_string('-lm', 'custom_dict_files/dictionary/script1.lm')
-        config.set_string('-dict', 'custom_dict_files/dictionary/script1.dict')
+        config.set_string('-lm', 'custom_dict_files/dictionary/sample.lm')
+        config.set_string('-dict', 'custom_dict_files/dictionary/sample.dict')
         config.set_string('-kws', 'custom_dict_files/sample_keyword_list.txt')
 
         # Creates decoder object for streaming data.
