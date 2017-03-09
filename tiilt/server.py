@@ -6,7 +6,7 @@ import sys
 
 import communication as com
 from commands import interpret_command
-
+from SpeechToText import *
 
 
 def run_server():
@@ -36,6 +36,9 @@ if __name__ == '__main__':
 	sock.bind(('',1234))
 	sock.listen(0)
 
+	sd = SpeechDetector()
+	#sd.setup_mic()
+
 	if '-i' in sys.argv or '--interactive' in sys.argv:
 		t = threading.Thread(target = run_server)
 		t.daemon = True
@@ -45,7 +48,9 @@ if __name__ == '__main__':
 				exit_cmd = 'exit'
 				print 'Kill server and exit with "%s"' % exit_cmd
 				while True:
-					cmd = raw_input('(speak) : ').strip().lower()
+					cmd = raw_input('Type A Command ').strip().lower()
+					#cmd = sd.run()
+					print cmd
 					if not cmd:
 						pass
 					elif cmd == exit_cmd:

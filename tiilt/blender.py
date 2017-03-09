@@ -48,9 +48,10 @@ class TIILTOperator(bpy.types.Operator):
         self.view_bottom,
         self.view_right,
         self.view_left,
-        self.add_cube,
-        self.add_cylinder,
         self.clear_everything,
+        self.undo,
+        self.redo,
+        self.add,
         ]
 
         self.commands = {f.__name__:f for f in _commands}
@@ -79,21 +80,6 @@ class TIILTOperator(bpy.types.Operator):
             context.window_manager.event_timer_remove(self._timer)
             return {'FINISHED'}
 
-        if event.type == 'A':
-            #JUST USED THIS FOR TESTING, CAN BE IGNORED FOR NOW
-            print('A pressed')
-            try:
-                cmd = read_command(self.sockfile)
-                if cmd:
-                    print('Found command')
-            except IOError as e:
-                loggin.excetion(e)
-            else:
-                if cmd:
-                    realCmd, kwargs = cmd
-                    if realCmd == 'add cube':
-                        bpy.ops.mesh.primitive_cube_add()
-
         if event.type == 'TIMER':
             try:
                 cmd = read_command(self.sockfile)
@@ -102,15 +88,18 @@ class TIILTOperator(bpy.types.Operator):
             else:
                 if cmd:
                     func, kwargs = cmd
+                    print('Here!!!')
                     print(func, kwargs)
+                    print('Here Again!!')
                     if func in self.commands:
-                        self.commands[func](**kwargs)
+                        #self.commands[func](**kwargs)
+                        self.commands[func](kwargs)
 
         return {'RUNNING_MODAL'}
 
     def invoke(self, context, event):
         try:
-            self.transport.connect(('', 1234))
+            self.transport.connect(('localhost', 1234))
             self.transport.setblocking(False)
             self.sockfile = self.transport.makefile()
 
@@ -143,8 +132,30 @@ class TIILTOperator(bpy.types.Operator):
     def add_cube(self):
         bpy.ops.mesh.primitive_cube_add()
 
-    def add_cylinder(self):
-        bpy.ops.mesh.primitive_cylinder_add()
+    def add(self, obj):
+        if(obj['shape'] == 'cube'):
+            bpy.ops.mesh.primitive_cube_add()
+        elif (obj['shape'] == 'monkey'):
+            bpy.ops.mesh.primitive_monkey_add()
+        elif (obj['shape'] == 'cylinder'):
+            bpy.ops.mesh.primitive_cylinder_add()
+        elif (obj['shape'] == 'cone'):
+            bpy.ops.mesh.primitive_cone_add()
+        elif (obj['shape'] == 'circle'):
+            bpy.ops.mesh.primitive_circle_add()
+        else:
+            pass
+
+
+    def rotate(self, x, y, z):
+        bpy.ops.transform.rotate(z, y, x)
+
+    def undo(self):
+        bpy.ops.ed.undo()
+
+    def redo(self):
+        bpy.ops.ed.redo()
+
 
     #TO DO
     def clear_everything(self):

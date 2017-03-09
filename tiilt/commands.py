@@ -6,9 +6,8 @@ def view_from(direction):
 	logging.debug('Viewing from %s' %direction)
 	send_command('view_%s' % direction)
 
-def add_object(object_name):
-	logging.debug('Adding %s' %object_name)
-	send_command('add_%s' %object_name)
+def move_object(object_name):
+	pass
 
 _mode_mapping = {
 	'object' : 'object',
@@ -27,17 +26,28 @@ _cmd_mapping = {
 	'left' : partial(view_from, 'left'),
 	'right' : partial(view_from, 'right'),
 	'below' : partial(view_from, 'bottom'),
-	'add cube' : partial(add_object, 'cube'),
-	'add cylinder' : partial(add_object, 'cylinder'),
 	'clear' : partial(send_command, 'clear_everything'),
+	'undo' : partial(send_command, 'undo'),
+	'move' : partial(send_command, 'move'),
+	'add' : partial(send_command, 'add'),
 }
 
 def interpret_command(cmd):
-	if cmd not in _cmd_mapping:
+	cmd_name = cmd.split(' ')[0]
+	print ('You entered '+cmd_name+' as the command.')
+	if cmd_name not in _cmd_mapping:
 		logging.debug('Unrecogniezed command %s' %cmd)
 		return False
-
-	retval = _cmd_mapping[cmd]()
+	'''
+	strArgs = [1,2,3]
+	for i in range(3):
+		print i
+		strArgs[i] = cmd.split(' ')[i]
+	'''
+	#retval = _cmd_mapping[strArgs[0]]({'shape' : strArgs[1]})
+	print cmd_name
+	print cmd.split(' ')[1]
+	retval = _cmd_mapping[cmd_name]({'shape' : cmd.split(' ')[1]})
 	if retval is not None:
 		return retval
 
