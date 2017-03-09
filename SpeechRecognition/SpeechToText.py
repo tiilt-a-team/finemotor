@@ -11,6 +11,8 @@ from collections import deque
 import time
 import math
 
+import speech_recognition as sr
+
 """
 Written by Aaron Karp, 2017
 Adapted from Sophie Li, 2016
@@ -115,6 +117,12 @@ class SpeechDetector:
             words.append(best.hypstr + ' -- model score: ' + str(best.score))
         return words
 
+    def decode_phrase_sphinx(self, wav_file):
+        r = sr.Recognizer()
+        with sr.AudioFile(wav_file) as source:
+            audio = r.record(source) # read the entire audio file
+        return r.recognize_sphinx(audio)
+
     def check_phrase(self, words):
         idx_to_get = 0  # words.index("zig")
         command = words[0]
@@ -172,12 +180,14 @@ class SpeechDetector:
             elif started:
                 print("Finished recording, decoding phrase")
                 filename = self.save_speech(list(prev_audio) + audio2send, p)
-                r = self.decode_phrase(filename)
+                # r = self.decode_phrase(filename)  # Pocketsphinx Decoder
+                r = self.decode_phrase_sphinx(filename)  # Sphinx Decoder
                 print()
                 print("TOP 10 DETECTED: ", r)
                 print()
 
-                best_phrase = self.check_phrase(r)
+                # best_phrase = self.check_phrase(r)  # Pocketsphinx Decoder
+                best_phrase = r  # Sphinx Decoder
                 #############################################################################################################################
                 # Inter.parse_phrase(best_phrase)
                 #############################################################################################################################
