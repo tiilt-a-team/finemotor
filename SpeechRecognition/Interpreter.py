@@ -62,6 +62,7 @@ def parse_phrase(phrase):
     possible_quantity = []
     direction = []
     possible_direction = []
+    here_say = False
     for ent in Et.match(doc):
         # print(ent.label_, ent.text)
         if ent.label_ == u'QUANTITY':
@@ -84,6 +85,8 @@ def parse_phrase(phrase):
             if word.text.lower() in possible_objects:
                 found_shape = True
                 objects.append(word.text.lower())
+            if word.text.lower() in 'here':
+                here_say = True
         if found_shape:
             temp_list = [[], []]
             for ent in Et.match(doc):
@@ -129,13 +132,13 @@ def parse_phrase(phrase):
         dire = ''
         if i < len(direction):
             dire = direction[i]
-        action_list.append(take_action(verb, obj, adj, quant, dire))
+        action_list.append(take_action(verb, obj, adj, quant, dire, here_say))
     return action_list
 
 
-def take_action(verb, obj, desc, quantity, direction):
+def take_action(verb, obj, desc, quantity, direction, here_say):
     # logging.info('' + str(20) + 'Calling '+ verb+ ' with arguments: '+ desc+ ' -> '+ obj+ ', '+ text2int(''.join(quantity.split(" ")[:-1]))+ ''.join(quantity.split(" ")[-1:])+ ' '+ direction)
-    return [verb, desc, obj, quantity, direction]
+    return [verb, desc, obj, quantity, direction, here_say]
 
 
 # parse_phrase('Move the big blue circle down fifty pixels, then move it up by twenty pixels. Enlarge the small yellow square by thirty pixels.')

@@ -32,42 +32,24 @@ def cleanup_server():
         pipe.close()
 
 
-def run_int(event, phrase_lock):
-    """Interpreter thread worker function"""
-    logging.debug('Starting Imports')
-    import Interpreter as Int
-    global global_phrase
-    logging.debug('Finished Imports')
-    local_phrase = ''
+def eye_tracker(lock, event):
+    logging.debug('In eye_tracker threading function.')
+    chunks = []
+    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client.connect((HOST, PORT))
     while True:
-        while not event.isSet():
-            event.wait(2)
-        with phrase_lock:
-            logging.debug('Event set')
-            local_phrase = global_phrase
-            event.clear()
-        Int.parse_phrase(local_phrase)
-
-
-def run_spt(event, phrase_lock):
-    """SpeechToTex thread worker function"""
-    logging.debug('Starting Imports')
-    import SpeechToText as Spt
-    global global_phrase
-    logging.debug('Finished Imports')
-    sd = Spt.SpeechDetector()
-    sd.setup_mic()
-    local_phrase = ''
-    while True:
-        local_phrase = sd.run()
         if event.isSet():
-            logging.debug('Event already set')
-        else:
-            with phrase_lock:
-                logging.debug('Setting event')
-                event.set()
-                global_phrase = local_phrase
-
+            with lock:
+                logging.debug(chunks)
+                event.clear()
+        try:
+            chunk = client.recv(1024).decode()
+            if chunk == '':
+                logging.debug('No socket data')
+            else:
+                chunks.append(chunk[:-1])
+        except:
+            logging.debug(sys.exc_info()[0])
 
 if __name__ == '__main__':
     HOST = ''   # Symbolic name, meaning all available interfaces
@@ -88,21 +70,29 @@ if __name__ == '__main__':
     sock.listen(0)
     logging.debug('Socket now listening')
 
-    sd = Spt.SpeechDetector()
-    sd.setup_mic()
+    #sd = Spt.SpeechDetector()
+    #sd.setup_mic()
 
     t = threading.Thread(target=run_server)
     t.daemon = True
+
+    eye_lock = threading.Lock()
+    eye_event = threading.Event()
+    eye_thread = threading.Thread(name='eye_tracking', target=eye_tracker, args = (eye_lock, eye_event,))
+    eye_thread.daemon = True
+
     try:
         t.start()
+        eye_thread.start()
         try:
             exit_cmd = 'exit'
             logging.info('Kill server and exit with "%s"' % exit_cmd)
             while True:
                 # FOR TESTING
-                # cmd = raw_input('Type A Command ').strip().lower()
+                cmd = raw_input('Type A Command ').strip().lower()
                 # FOR RUNNING
-                cmd = sd.run()
+                #cmd = sd.run()
+                eye_event.set()
                 if not cmd:
                     pass
                 elif cmd == exit_cmd:
