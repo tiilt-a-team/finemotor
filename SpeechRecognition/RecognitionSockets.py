@@ -6,6 +6,7 @@ import time
 import sys
 import SpeechToText as Spt
 import SocketCommunication as Comm
+import Queue
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s',
@@ -27,6 +28,7 @@ def run_server():
 
 
 def cleanup_server():
+    eye_sock.close()
     sock.close()
     for pipe in Comm.clients:
         pipe.close()
@@ -35,26 +37,33 @@ def cleanup_server():
 def eye_tracker(lock, event):
     logging.debug('In eye_tracker threading function.')
     global EYE_DATA
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((HOST, PORT))
+    conn, address = eye_sock.accept()
+    too_big = False
     while True:
-        if event.isSet():
-            with lock:
-                logging.debug(EYE_DATA)
-                event.clear()
         try:
-            chunk = client.recv(1024).decode()
-            if chunk == '':
-                logging.debug('No socket data')
-            else:
-                with lock:
-                    EYE_DATA.append(chunk[:-1])
+            chunk = conn.recv(2048).decode()
+            if chunk:
+                #conn.send("received")
+                dechunked = chunk.split("-")
+                if not too_big:
+                    for seg in dechunked:
+                        EYE_DATA.put(seg)
+                        if EYE_DATA.full():
+                            EYE_DATA.get()
+                            too_big = True
+                else:
+                    for seg in dechunked:
+                        EYE_DATA.put(seg)
+                        EYE_DATA.get()
+            if len(chunk) > 100:
+                logging.debug(len(chunk))
         except:
             logging.debug(sys.exc_info()[0])
 
 if __name__ == '__main__':
     HOST = ''   # Symbolic name, meaning all available interfaces
     PORT = 8888 # Arbitrary non-privileged port
+    EYE_PORT = 8220
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
@@ -71,8 +80,24 @@ if __name__ == '__main__':
     sock.listen(0)
     logging.debug('Socket now listening')
 
+    eye_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    eye_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+    logging.debug('Socket created')
+    try:
+        eye_sock.bind((HOST, EYE_PORT))
+    except socket.error as msg:
+        logging.exception('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+        sys.exit()
+
+    logging.debug('Socket bind complete')
+
+    # Start listening on socket
+    eye_sock.listen(0)
+    logging.debug('Socket now listening')
+
     sd = Spt.SpeechDetector()
-    sd.setup_mic()
+    #sd.setup_mic()
 
     t = threading.Thread(target=run_server)
     t.daemon = True
@@ -82,7 +107,7 @@ if __name__ == '__main__':
     eye_thread = threading.Thread(name='eye_tracking', target=eye_tracker, args = (eye_lock, eye_event,))
     eye_thread.daemon = True
 
-    EYE_DATA = []
+    EYE_DATA = Queue.Queue(500)
 
     try:
         t.start()
@@ -92,19 +117,20 @@ if __name__ == '__main__':
             logging.info('Kill server and exit with "%s"' % exit_cmd)
             while True:
                 # FOR TESTING
-                # cmd = raw_input('Type A Command ').strip().lower()
+                cmd = raw_input('Type A Command ').strip().lower()
                 # FOR RUNNING
-                cmd = sd.run()
-                eye_event.set()
+                #cmd = sd.run()
+
+                #eye_event.set()
                 if not cmd:
                     pass
                 elif cmd == exit_cmd:
                     break
-                with eye_lock:
-                    logging.debug(EYE_DATA)
-                    if not Comm.interpret_command(cmd, EYE_DATA):
-                            logging.exception('bad unrecognized command "%s"' % cmd)
-                    EYE_DATA = []
+                #with eye_lock:
+                #    logging.debug(EYE_DATA)
+                #    if not Comm.interpret_command(cmd, EYE_DATA):
+                #            logging.exception('bad unrecognized command "%s"' % cmd)
+                #    EYE_DATA = []
         except EOFError:
             logging.exception('EOF')
         except KeyboardInterrupt:
@@ -115,3 +141,4 @@ if __name__ == '__main__':
         cleanup_server()
 
     sock.close()
+    eye_sock.close()
