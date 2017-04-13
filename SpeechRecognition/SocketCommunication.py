@@ -19,7 +19,7 @@ debug = True
 clients = []
 
 
-def send_command(name, data={}):
+def send_command(name, eye_info, data={}):
     """
     Send a command: name is the target function's name, data is the target
     function's kwargs.
@@ -27,6 +27,7 @@ def send_command(name, data={}):
     global clients
     with _lock:
         data['__fnc__'] = name
+        data['__eye__'] = eye_info
         if debug:
             logging.debug('Sending:' + pformat(data))
         jdata = json.dumps(data) + '\n'
@@ -42,7 +43,7 @@ def send_command(name, data={}):
         time.sleep(0.02)
 
 
-def interpret_command(phrase):
+def interpret_command(phrase, eye_data):
     parsed = Inter.parse_phrase(phrase)
     if parsed is None:
         logging.debug('Parsed was none')
@@ -50,5 +51,5 @@ def interpret_command(phrase):
     logging.debug(parsed)
     for cmd in parsed:
         # TODO: Convert data to dict structure
-        send_command(cmd[0])
+        send_command(cmd[0], eye_data)
     return True

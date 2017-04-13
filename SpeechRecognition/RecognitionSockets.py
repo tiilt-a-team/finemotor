@@ -34,20 +34,21 @@ def cleanup_server():
 
 def eye_tracker(lock, event):
     logging.debug('In eye_tracker threading function.')
-    chunks = []
+    global EYE_DATA
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((HOST, PORT))
     while True:
         if event.isSet():
             with lock:
-                logging.debug(chunks)
+                logging.debug(EYE_DATA)
                 event.clear()
         try:
             chunk = client.recv(1024).decode()
             if chunk == '':
                 logging.debug('No socket data')
             else:
-                chunks.append(chunk[:-1])
+                with lock:
+                    EYE_DATA.append(chunk[:-1])
         except:
             logging.debug(sys.exc_info()[0])
 
@@ -70,8 +71,8 @@ if __name__ == '__main__':
     sock.listen(0)
     logging.debug('Socket now listening')
 
-    #sd = Spt.SpeechDetector()
-    #sd.setup_mic()
+    sd = Spt.SpeechDetector()
+    sd.setup_mic()
 
     t = threading.Thread(target=run_server)
     t.daemon = True
@@ -81,6 +82,8 @@ if __name__ == '__main__':
     eye_thread = threading.Thread(name='eye_tracking', target=eye_tracker, args = (eye_lock, eye_event,))
     eye_thread.daemon = True
 
+    EYE_DATA = []
+
     try:
         t.start()
         eye_thread.start()
@@ -89,16 +92,19 @@ if __name__ == '__main__':
             logging.info('Kill server and exit with "%s"' % exit_cmd)
             while True:
                 # FOR TESTING
-                cmd = raw_input('Type A Command ').strip().lower()
+                # cmd = raw_input('Type A Command ').strip().lower()
                 # FOR RUNNING
-                #cmd = sd.run()
+                cmd = sd.run()
                 eye_event.set()
                 if not cmd:
                     pass
                 elif cmd == exit_cmd:
                     break
-                if not Comm.interpret_command(cmd):
-                        logging.exception('bad unrecognized command "%s"' % cmd)
+                with eye_lock:
+                    logging.debug(EYE_DATA)
+                    if not Comm.interpret_command(cmd, EYE_DATA):
+                            logging.exception('bad unrecognized command "%s"' % cmd)
+                    EYE_DATA = []
         except EOFError:
             logging.exception('EOF')
         except KeyboardInterrupt:
