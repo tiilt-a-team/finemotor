@@ -6,6 +6,7 @@ import time
 import logging
 import Interpreter as Inter
 from pprint import pformat
+import pickle
 
 logging.basicConfig(level=logging.DEBUG,
                     format='[%(levelname)s] (%(threadName)-10s) %(message)s',
@@ -26,8 +27,7 @@ def send_command(name, eye_info, data={}):
     """
     global clients
     with _lock:
-        data['__fnc__'] = name
-        data['__eye__'] = eye_info
+        data = pickle.dumps(eye_info)
         if debug:
             logging.debug('Sending:' + pformat(data))
         jdata = json.dumps(data) + '\n'
@@ -48,8 +48,8 @@ def interpret_command(phrase, eye_data):
     if parsed is None:
         logging.debug('Parsed was none')
         return False
+    logging.debug(eye_data)
     logging.debug(parsed)
     for cmd in parsed:
-        # TODO: Convert data to dict structure
-        send_command(cmd[0], eye_data)
+        send_command(cmd[0], parsed)
     return True
