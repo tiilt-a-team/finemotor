@@ -45,6 +45,7 @@ def text2int(textnum, numwords={}):
 
 
 def parse_phrase(phrase):
+    parsed_phrase = dict.fromkeys(["verb", "object", "description", "quantity", "direction", "heresay"])
     doc = ''
     try:
         doc = nlp(unicode(phrase.lower(), encoding="utf-8"))
@@ -116,9 +117,11 @@ def parse_phrase(phrase):
         # Noun phrases need to be grouped together cohesively
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         verb = verbs[i]
+        parsed_phrase["verb"] = verb
         obj = ''
         if i < len(objects):
             obj = objects[i]
+            parsed_phrase["object"] = obj
         else:
             #action_list.append(None)
             #continue
@@ -126,14 +129,18 @@ def parse_phrase(phrase):
         adj = ''
         if i < len(adjectives):
             adj = adjectives[i]
+        parsed_phrase["description"] = adj
         quant = ''
         if i < len(quantity):
             quant = quantity[i]
+        parsed_phrase["quantity"] = quant
         dire = ''
         if i < len(direction):
             dire = direction[i]
+        parsed_phrase["direction"] = direction
         action_list.append(take_action(verb, obj, adj, quant, dire, here_say))
-    return action_list
+    return parsed_phrase
+    #return action_list
 
 
 def take_action(verb, obj, desc, quantity, direction, here_say):

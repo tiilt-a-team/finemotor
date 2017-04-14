@@ -126,6 +126,8 @@ if __name__ == '__main__':
                     pass
                 elif cmd == exit_cmd:
                     break
+                if not Comm.interpret_command(cmd, EYE_DATA):
+                    logging.exception('bad unrecognized command "%s"' % cmd)
                 #with eye_lock:
                 #    logging.debug(EYE_DATA)
                 #    if not Comm.interpret_command(cmd, EYE_DATA):
