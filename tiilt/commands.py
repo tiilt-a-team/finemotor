@@ -30,6 +30,7 @@ _cmd_mapping = {
 	'undo' : partial(send_command, 'undo'),
 	'move' : partial(send_command, 'move'),
 	'add' : partial(send_command, 'add'),
+	'view' : partial(send_command, 'view'),
 }
 
 def interpret_command(cmd):
@@ -38,17 +39,18 @@ def interpret_command(cmd):
 	if cmd_name not in _cmd_mapping:
 		logging.debug('Unrecogniezed command %s' %cmd)
 		return False
-	'''
-	strArgs = [1,2,3]
-	for i in range(3):
-		print i
-		strArgs[i] = cmd.split(' ')[i]
-	'''
-	#retval = _cmd_mapping[strArgs[0]]({'shape' : strArgs[1]})
+
+	obj = cmd.split(' ')[1]
+	pos = cmd.split(' ')[2]
+
 	print cmd_name
-	print cmd.split(' ')[1]
-	retval = _cmd_mapping[cmd_name]({'shape' : cmd.split(' ')[1]})
+	print obj
+	print pos
+
+	retval = _cmd_mapping[cmd_name]({'specifier' : obj, 'position': pos,})
+
 	if retval is not None:
 		return retval
 
 	return True
+

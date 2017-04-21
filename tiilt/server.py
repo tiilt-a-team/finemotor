@@ -3,6 +3,7 @@ import os
 import logging
 import threading
 import sys
+import pickle
 
 import communication as com
 from commands import interpret_command
@@ -36,7 +37,7 @@ if __name__ == '__main__':
 	sock.bind(('',1234))
 	sock.listen(0)
 
-	sd = SpeechDetector()
+	#sd = SpeechDetector()
 	#sd.setup_mic()
 
 	if '-i' in sys.argv or '--interactive' in sys.argv:
@@ -55,9 +56,10 @@ if __name__ == '__main__':
 						pass
 					elif cmd == exit_cmd:
 						break
-
+					
 					if not interpret_command(cmd):
 						print 'Unrecognized command "%s"' % cmd
+					
 			except EOFError:
 				print 'EOF'
 			except KeyboardInterrupt:

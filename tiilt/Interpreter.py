@@ -45,8 +45,10 @@ def text2int(textnum, numwords={}):
 
 
 def parse_phrase(phrase):
+    parsed_phrase = dict.fromkeys(["verb", "object", "description", "quantity", "direction", "heresay"])
+    doc = ''
     try:
-        doc = nlp(unicode(phrase, encoding="utf-8"))
+        doc = nlp(unicode(phrase.lower(), encoding="utf-8"))
     except:
         logging.exception('Unable to decode phrase')
         exit()
@@ -61,6 +63,7 @@ def parse_phrase(phrase):
     possible_quantity = []
     direction = []
     possible_direction = []
+    here_say = False
     for ent in Et.match(doc):
         # print(ent.label_, ent.text)
         if ent.label_ == u'QUANTITY':
@@ -83,6 +86,8 @@ def parse_phrase(phrase):
             if word.text.lower() in possible_objects:
                 found_shape = True
                 objects.append(word.text.lower())
+            if word.text.lower() in 'here':
+                here_say = True
         if found_shape:
             temp_list = [[], []]
             for ent in Et.match(doc):
@@ -112,29 +117,38 @@ def parse_phrase(phrase):
         # Noun phrases need to be grouped together cohesively
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         verb = verbs[i]
+        parsed_phrase["verb"] = verb
         obj = ''
         if i < len(objects):
             obj = objects[i]
+            parsed_phrase["object"] = obj
         else:
             #action_list.append(None)
             #continue
-            return None
+            return action_list
         adj = ''
         if i < len(adjectives):
             adj = adjectives[i]
+        parsed_phrase["description"] = adj
         quant = ''
         if i < len(quantity):
             quant = quantity[i]
+        parsed_phrase["quantity"] = quant
         dire = ''
         if i < len(direction):
             dire = direction[i]
-        action_list.append(take_action(verb, obj, adj, quant, dire))
-    return action_list
+        parsed_phrase["direction"] = direction
+        action_list.append(take_action(verb, obj, adj, quant, dire, here_say))
+
+    print(parsed_phrase)
+    print('he')
+    return parsed_phrase
+    #return action_list
 
 
-def take_action(verb, obj, desc, quantity, direction):
-    #logging.info('' + str(20) + 'Calling '+ verb+ ' with arguments: '+ desc+ ' -> '+ obj+ ', '+ text2int(''.join(quantity.split(" ")[:-1]))+ ''.join(quantity.split(" ")[-1:])+ ' '+ direction)
-    return [verb, desc, obj, text2int(''.join(quantity.split(" ")[:-1])), direction]
+def take_action(verb, obj, desc, quantity, direction, here_say):
+    # logging.info('' + str(20) + 'Calling '+ verb+ ' with arguments: '+ desc+ ' -> '+ obj+ ', '+ text2int(''.join(quantity.split(" ")[:-1]))+ ''.join(quantity.split(" ")[-1:])+ ' '+ direction)
+    return [verb, desc, obj, quantity, direction, here_say]
 
 
-# parse_phrase('Move the big blue circle down fifty pixels, then move it up by twenty pixels. Enlarge the small yellow square by thirty pixels.')
+parse_phrase('move the cube to the left')

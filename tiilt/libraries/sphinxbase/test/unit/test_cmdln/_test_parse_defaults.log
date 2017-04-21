@@ -1,0 +1,3 @@
+defaults PASSED
+All sub-tests passed
+PASS _test_parse_defaults.test (exit status: 0)
