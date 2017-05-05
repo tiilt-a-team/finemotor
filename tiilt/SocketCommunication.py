@@ -46,13 +46,12 @@ def send_command(name, eye_info, data={}):
 
 def interpret_command(phrase, eye_data):
     parsed = Inter.parse_phrase(phrase)
-    #print ('Printing Parsed: ')
-    #print(parsed)
     if parsed is None:
         logging.debug('Parsed was none')
         return False
     logging.debug(eye_data)
     logging.debug(parsed)
-    for cmd in parsed:
-        send_command(cmd[0], parsed)
+
+    print('Sending command' + parsed['verb'])
+    send_command(parsed['verb'], parsed)
     return True

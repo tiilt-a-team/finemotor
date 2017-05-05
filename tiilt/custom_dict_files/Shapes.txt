@@ -8,3 +8,7 @@ triangle
 triangles
 box
 boxes
+cube
+cylinder
+cone
+monkey

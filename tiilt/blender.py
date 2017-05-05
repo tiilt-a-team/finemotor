@@ -17,40 +17,35 @@ import pickle
 This model works under the assumption that it receives a dictionary with a call to a command in the following form
 
 {
-    specifier: x,
-    location: (x,y,z),
-    dimensions: (x_dim, y_dim, z_dim)
+    'heresay': None,
+    'quantity': 'twenty pixels', 
+    'verb': 'add',
+    'object': 'circle',
+    'description': [[], []],
+    'direction': ['']}
+    'coord'
 }
-'''
+
+        
+        if event.type == 'TAB':
+            mouse_vector = bpy_extras.view3d_utils.region_2d_to_origin_3d(bpy.context.region, 
+                bpy.context.space_data.region_3d, (event.mouse_region_x, event.mouse_region_y), mathutils.Vector((0,0,0)))
+
+            print(str(mouse_vector[0]) + ' ' + str(mouse_vector[1]) + ' ' + str(mouse_vector[2]))
+            bpy.ops.mesh.primitive_cube_add(location = mouse_vector)
+        
+
 
 '''
-def read_command(transport):
-    try:
-        line = transport.readline()
-        if not line:
-            return
-        data = json.loads(line)
 
-    except ValueError as e:
-        logging.exception(e)
-        raise IOError()
-
-    try:
-        cmd = data['__cmd__']
-        del data['__cmd__']
-    except KeyError as e:
-        logging.exception(e)
-        raise IOError()
-
-    return cmd, data
-'''
 def read_command(transport):
     try:
         line = transport.recv(2048)
-        data = pickle.loads(line)
-        print('Data has been received')
+
         if not line:
             return
+        data = pickle.loads(line)
+        
         #data = json.loads(line)
 
     except ValueError as e:
@@ -59,6 +54,8 @@ def read_command(transport):
 
     try:
         cmd = data['verb']
+        print(cmd)
+        print (data)
         del data['verb']
     except KeyError as e:
         logging.exception(e)
@@ -68,38 +65,13 @@ def read_command(transport):
 
 
 
-#NOT SURE THESE METHODS ARE NEEDED
-'''
-def position_to_array(inp_str):
-        num_array = inp_str.split(",")
-        return num_array
-
-
-
-def str_to_int(inp_arr):
-    num_array = [0,0,0]
-    for i in range(0, len(inp_arr)):
-        num_array[i] = int(inp_arr[i])
-
-    return num_array
-'''
-
 '''Calculates the distance betweent two points on the screen'''
 
 def calc_min_distance(obj1_loc, obj2_loc):
     dist = (obj1_loc[0]-obj2_loc[0])**2 + (obj1_loc[1]-obj2_loc[1])**2 + (obj1_loc[2]-obj2_loc[2])**2
     return math.sqrt(dist)
 
-#NOT WORKING RIGHT NOW
-'''
-def get_objects():
-    if not bpy.context.selected_objects: #Make sure to deselect any selected items before selecting them afresh
-        bpy.ops.object.select_all(actions = 'TOGGLE')
-    bpy.ops.object.select_all(action = 'TOGGLE') #select all objects
-    return_string = bpy.context.selected_objects
-    bpy.ops.object.select_all(action = 'TOGGLE') #deselect all objects
-    return return_string
-'''
+
 
 
 
@@ -119,9 +91,10 @@ def find_object(obj_specifier, obj_location):
                 obj_counter = obj_counter + 1
 
         if obj_counter > 1:
-            print('Please specify which ' + obj_specifier + ' you want.')
-        else:
-            return ob.name
+            ob.name = 'Null'
+
+
+        return ob.name
     
 
     prev_dist = 100000000
@@ -178,6 +151,7 @@ class TIILTOperator(bpy.types.Operator):
         self.redo,
         self.add,
         self.view,
+        self.rename_object
         ]
 
         self.commands = {f.__name__:f for f in _commands}
@@ -209,8 +183,6 @@ class TIILTOperator(bpy.types.Operator):
         if event.type == 'TIMER':
             try:
                 cmd = read_command(self.transport)
-                print ('Printing the commands dictionary: ')
-                print (cmd)
             except IOError as e:
                 logging.exception(e)
             else:
@@ -219,13 +191,6 @@ class TIILTOperator(bpy.types.Operator):
                     if func in self.commands:
                         #self.commands[func](**kwargs)
                         self.commands[func](kwargs)
-
-        if event.type == 'TAB':
-            mouse_vector = bpy_extras.view3d_utils.region_2d_to_origin_3d(bpy.context.region, 
-                bpy.context.space_data.region_3d, (event.mouse_region_x, event.mouse_region_y), mathutils.Vector((0,0,0)))
-
-            print(str(mouse_vector[0]) + ' ' + str(mouse_vector[1]) + ' ' + str(mouse_vector[2]))
-            bpy.ops.mesh.primitive_cube_add(location = mouse_vector)
 
 
         return {'RUNNING_MODAL'}
@@ -267,16 +232,18 @@ class TIILTOperator(bpy.types.Operator):
         direction = obj['specifier']
         self.view_numpad(direction.upper())
 
+
+
     def add(self, dict):
-        shape = dict['specifier']
-        object_position = dict['position']
-        if(object_position.upper() == 'NULL'):
-            pos = [0,0,0]
+        shape = dict['object']
+        
+        if dict['coord'] is None:
+            pos = (0,0,0)
         else:
-            pos_str = position_to_array(object_position)
-            pos = str_to_int(pos_str)
+            pos = dict['coord']
 
         bpy.context.scene.cursor_location = (pos[0], pos[1], pos[2])
+
         if(shape == 'cube'):
             bpy.ops.mesh.primitive_cube_add()
         elif (shape == 'monkey'):
@@ -290,36 +257,38 @@ class TIILTOperator(bpy.types.Operator):
         else:
             pass
 
-    def add_with_eyetribe(self, dict):
-        shape = dict['specifier']
-        #This assumes that at the moment of adding the object the mouse is located
-        #directly above the area that the user wants to add the object
 
-        mouse_vector = bpy_extras.view3d_utils.region_2d_to_origin_3d(bpy.context.region, 
-                bpy.context.space_data.region_3d, (event.mouse_region_x, event.mouse_region_y), mathutils.Vector((0,0,0)))
 
-        if(shape == 'cube'):
-            bpy.ops.mesh.primitive_cube_add(location = mouse_vector)
-        elif (shape == 'monkey'):
-            bpy.ops.mesh.primitive_monkey_add(location = mouse_vector)
-        elif (shape == 'cylinder'):
-            bpy.ops.mesh.primitive_cylinder_add(location = mouse_vector)
-        elif (shape == 'cone'):
-            bpy.ops.mesh.primitive_cone_add(location = mouse_vector)
-        elif (shape == 'circle'):
-            bpy.ops.mesh.primitive_circle_add(location = mouse_vector)
-        else:
-            pass
+    #Renames an object
+    #obj_name: previous name
+    #new_name: new_name duh!
+
+    def rename_object(self, obj_name, new_name):
+        bpy.data.objects[object_name].name = new_name
 
 
 
+    #Moves an object
     def move_object(self, dict):
-        #Moves an object from one location to another
-        obj_specifier = dict['specifier']
-        obj_location = dict['coordinates']
+        #deselect all object, select object being tranlated, move it
+        try:
+            obj_specifier = dict['object']
+        except:
+            print('Please specify the object')
 
-        find_object(obj_specifier, obj_location)
+        obj_name = find_object(obj_specifier)
 
+        for obj in bpy.data.objects:
+            obj.select = False
+
+        bpy.data.objects[obj_name].select = True
+        bpy.ops.transform.tranlate(value = dict[position])
+        pass
+
+
+
+    def resize_object(self):
+        #find object with given properties, resize to new scale
         pass
 
     def rotate(self, x, y, z):
@@ -339,19 +308,20 @@ class TIILTOperator(bpy.types.Operator):
 
     def delete_object(self, dict):
         #Find object with given properties, delete object
-        obj_name = dict['specifier']
-        obj_location = dict['location']
-        obj_name = find_object(obj_name, obj_location)
+        obj_type = dict['object']
+        if dict['coords'] is not None:
+            obj_name = find_object(obj_type, dict['coords'])
+        else:
+            obj_name = find_object(obj_type)
+
+        if obj_name = 'Null':
+            print('Specify the specific' + obj_type + 'that you want to delete.')
+
         select_object(obj_name)
 
         bpy.ops.object.delete(use_global)
 
         print('Object has been deleted')
-
-    def resize_object(self):
-        #find object with given properties, resize to new scale
-        pass
-
 
 
 

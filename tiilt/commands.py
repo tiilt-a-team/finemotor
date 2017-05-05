@@ -1,6 +1,6 @@
 import logging
 from functools import partial
-from communication import send_command
+from SocketCommunication import send_command
 
 def view_from(direction):
 	logging.debug('Viewing from %s' %direction)
