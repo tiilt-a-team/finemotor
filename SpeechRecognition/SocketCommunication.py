@@ -48,8 +48,7 @@ def interpret_command(phrase, eye_data):
     if parsed is None:
         logging.debug('Parsed was none')
         return False
-    logging.debug(eye_data)
+    parsed['coord'] = eye_data.get()
     logging.debug(parsed)
-    for cmd in parsed:
-        send_command(cmd[0], parsed)
+    send_command(parsed['verb'], parsed)
     return True

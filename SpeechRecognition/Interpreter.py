@@ -133,7 +133,7 @@ def parse_phrase(phrase):
         quant = ''
         if i < len(quantity):
             quant = quantity[i]
-        parsed_phrase["quantity"] = quant
+        parsed_phrase["quantity"] = text2int(''.join(quant.split(" ")[:-1]))
         dire = ''
         if i < len(direction):
             dire = direction[i]
