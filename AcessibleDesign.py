@@ -3,6 +3,7 @@ import signal
 import subprocess
 import time
 import sys
+import platform
 
 global subs
 
@@ -13,8 +14,16 @@ def main():
 	sys.stdout.write("\033[1;31m") # Red
 	print 'Press Ctrl-C to kill all AccessibleDesign processes'
 
+	plat = platform
+
 	try:
-		eye_tribe = subprocess.Popen("EyeTracker/EyeTribe", stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
+		if plat.system() == 'Windows': # Windows
+			eye_tribe = subprocess.Popen("EyeTracker/EyeTribe.exe", stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
+		elif plat.system() == 'Darwin': # MacOS
+			eye_tribe = subprocess.Popen("EyeTracker/EyeTribe", stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
+		else:
+			print 'Unsupported Operating System'
+			exit()
 		subs.append(eye_tribe)
 		#time.sleep(1)
 		recognition_sockets = subprocess.Popen(['python', 'RecognitionSockets.py'], cwd='SpeechRecognition', stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
