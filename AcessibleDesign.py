@@ -46,7 +46,7 @@ def main():
 		recognition_sockets = subprocess.Popen(['python', 'RecognitionSockets.py'], cwd='SpeechRecognition', stdout=subprocess.PIPE, shell=False)
 		subs.append(recognition_sockets)
 
-		find_dir()
+		#find_dir()
 		blender = subprocess.Popen('./blender.app/Contents/MacOS/blender -d --python tiilt/blender.py', stdout=subprocess.PIPE, cwd=directory, shell=True)
 		subs.append(blender)
 
