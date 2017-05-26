@@ -1,4 +1,3 @@
-import os
 import signal
 import subprocess
 import time
@@ -6,6 +5,9 @@ import sys
 import platform
 from Tkinter import *
 import tkFileDialog
+import psutil
+import os
+from os.path import join
 
 global subs
 global directory
@@ -33,19 +35,19 @@ def main():
 		root.destroy()
 
 		if plat.system() == 'Windows': # Windows
-			eye_tribe = subprocess.Popen("EyeTracker/EyeTribe.exe", stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
+			eye_tribe = subprocess.Popen("EyeTracker/EyeTribe.exe", stdout=subprocess.PIPE, shell=False)
 		elif plat.system() == 'Darwin': # MacOS
-			eye_tribe = subprocess.Popen("EyeTracker/EyeTribe", stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
+			eye_tribe = subprocess.Popen("EyeTracker/EyeTribe", stdout=subprocess.PIPE, shell=False)
 		else:
 			print 'Unsupported Operating System'
 			exit()
 		
 		subs.append(eye_tribe)
-		recognition_sockets = subprocess.Popen(['python', 'RecognitionSockets.py'], cwd='SpeechRecognition', stdout=subprocess.PIPE, shell=False, preexec_fn=os.setsid)
+		recognition_sockets = subprocess.Popen(['python', 'RecognitionSockets.py'], cwd='SpeechRecognition', stdout=subprocess.PIPE, shell=False)
 		subs.append(recognition_sockets)
 
-		print directory
-		blender = subprocess.Popen('./blender.app/Contents/MacOS/blender -d --python tiilt/blender.py', cwd=directory, shell=True, preexec_fn=os.setsid)
+		find_dir()
+		blender = subprocess.Popen('./blender.app/Contents/MacOS/blender -d --python tiilt/blender.py', stdout=subprocess.PIPE, cwd=directory, shell=True)
 		subs.append(blender)
 
 		sys.stdout.write("\033[0;32m") # Green
@@ -70,10 +72,41 @@ def main():
 		except KeyboardInterrupt:
 			exit()
 
+def find_dir():
+	lookfor = "blender.app"
+	temp_dir = ''
+	if platform.system() == 'Windows':
+		temp_dir = 'C:\\'
+	elif platform.system() == 'Darwin':
+		temp_dir = '/'
+	else:
+		return
+	walklevel(lookfor, temp_dir, 1)
+	return
 
-def openDir():
-    global directory
-    directory = tkFileDialog.askdirectory(initialdir='.')
+def walklevel(lookfor, some_dir, level=1):
+    some_dir = some_dir.rstrip(os.path.sep)
+    assert os.path.isdir(some_dir)
+    num_sep = some_dir.count(os.path.sep)
+    for root, dirs, files in os.walk(some_dir):
+        yield root, dirs, files
+        print "searching ", root
+        if lookfor in files:
+        	print "found: %s" % join(root, lookfor)
+        	break
+        num_sep_this = root.count(os.path.sep)
+        if num_sep + level <= num_sep_this:
+            del dirs[:]
+
+def kill_proc_tree(pid, including_parent=True):    
+    parent = psutil.Process(pid)
+    children = parent.children(recursive=True)
+    for child in children:
+        child.kill()
+    gone, still_alive = psutil.wait_procs(children, timeout=5)
+    if including_parent:
+        parent.kill()
+        parent.wait(5)
 
 # Kill processes and exit shell
 def exit():
@@ -81,7 +114,7 @@ def exit():
 	sys.stdout.write("\033[1;31m") # Red
 	for sub in subs:
 		try:
-			os.killpg(os.getpgid(sub.pid), signal.SIGTERM)
+			kill_proc_tree(sub.pid)
 		except Exception as e:
 			print ''
 			print 'Subprocess error'
@@ -91,6 +124,6 @@ def exit():
 	sys.exit()
 
 
-
+# https://stackoverflow.com/questions/1230669/subprocess-deleting-child-processes-in-windows
 
 main()
