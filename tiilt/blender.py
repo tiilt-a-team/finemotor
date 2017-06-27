@@ -12,40 +12,13 @@ import pickle
 
 
 
-'''
-
-This model works under the assumption that it receives a dictionary with a call to a command in the following form
-
-{
-    'heresay': None,
-    'quantity': 'twenty pixels', 
-    'verb': 'add',
-    'object': 'circle',
-    'description': [[], []],
-    'direction': ['']}
-    'coord'
-}
-
-        
-        if event.type == 'TAB':
-            mouse_vector = bpy_extras.view3d_utils.region_2d_to_origin_3d(bpy.context.region, 
-                bpy.context.space_data.region_3d, (event.mouse_region_x, event.mouse_region_y), mathutils.Vector((0,0,0)))
-
-            print(str(mouse_vector[0]) + ' ' + str(mouse_vector[1]) + ' ' + str(mouse_vector[2]))
-            bpy.ops.mesh.primitive_cube_add(location = mouse_vector)
-        
-
-
-'''
-
 def read_command(transport):
     try:
         line = transport.recv(2048)
-
+        data = pickle.loads(line)
+        print('Data has been received')
         if not line:
             return
-        data = pickle.loads(line)
-        
         #data = json.loads(line)
 
     except ValueError as e:
@@ -54,8 +27,6 @@ def read_command(transport):
 
     try:
         cmd = data['verb']
-        print(cmd)
-        print (data)
         del data['verb']
     except KeyError as e:
         logging.exception(e)
@@ -64,6 +35,18 @@ def read_command(transport):
     return cmd, data
 
 
+'''Calculates the correct coordinates for placing the cursor location based on a command that specifies
+pixel quantity and a direction'''
+
+def coord_calc(quantity, direction):
+    if direction == 'top':
+        return (bpy.data.screens['Default'].scene.cursor_location[0], quantity)
+    elif direction == 'bottom':
+        return (bpy.data.screens['Default'].scene.cursor_location[0], -(quantity))
+    elif direction == 'right':
+        return (quantity, bpy.data.screens['Default'].scene.cursor_location[1])
+    elif direction == 'left':
+        return (-(quantity), bpy.data.screens['Default'].scene.cursor_location[1])
 
 '''Calculates the distance betweent two points on the screen'''
 
@@ -72,15 +55,6 @@ def calc_min_distance(obj1_loc, obj2_loc):
     return math.sqrt(dist)
 
 
-
-
-
-'''Given a location this method finds an object and returns its name as stored in blender
-    If more than one object of the type is present and a location is not specified the method
-    prompts the user to given a location or specify a location
-    obj_specifier: classification of the object e.g cube, cylinder
-    obj_location: Vector specifying the location of the object to be found
-'''
 def find_object(obj_specifier, obj_location):
     scene = bpy.context.scene
 
@@ -91,10 +65,9 @@ def find_object(obj_specifier, obj_location):
                 obj_counter = obj_counter + 1
 
         if obj_counter > 1:
-            ob.name = 'Null'
-
-
-        return ob.name
+            print('Please specify which ' + obj_specifier + ' you want.')
+        else:
+            return ob.name
     
 
     prev_dist = 100000000
@@ -129,6 +102,7 @@ def select_object(obj_name):
 
 
 
+
 class TIILTOperator(bpy.types.Operator):
     bl_idname = "object.tiilt"
     bl_label = "TIILT Operator"
@@ -151,7 +125,6 @@ class TIILTOperator(bpy.types.Operator):
         self.redo,
         self.add,
         self.view,
-        self.rename_object
         ]
 
         self.commands = {f.__name__:f for f in _commands}
@@ -181,6 +154,7 @@ class TIILTOperator(bpy.types.Operator):
             return {'FINISHED'}
 
         if event.type == 'TIMER':
+            bpy.ops.view3d.viewnumpad(type='TOP')
             try:
                 cmd = read_command(self.transport)
             except IOError as e:
@@ -192,12 +166,20 @@ class TIILTOperator(bpy.types.Operator):
                         #self.commands[func](**kwargs)
                         self.commands[func](kwargs)
 
+        '''
+        if event.type == 'TAB':
+            mouse_vector = bpy_extras.view3d_utils.region_2d_to_origin_3d(bpy.context.region, 
+                bpy.context.space_data.region_3d, (event.mouse_region_x, event.mouse_region_y), mathutils.Vector((0,0,0)))
+
+            print(str(mouse_vector[0]) + ' ' + str(mouse_vector[1]) + ' ' + str(mouse_vector[2]))
+            bpy.ops.mesh.primitive_cube_add(location = mouse_vector)
+        '''
 
         return {'RUNNING_MODAL'}
 
     def invoke(self, context, event):
         try:
-            self.transport.connect(('localhost', 1234))
+            self.transport.connect(('localhost', 8888))
             #self.transport.setblocking(False)
             self.sockfile = self.transport.makefile()
 
@@ -208,6 +190,7 @@ class TIILTOperator(bpy.types.Operator):
         print("Started")
         self._timer = context.window_manager.event_timer_add(0.01, context.window)
         context.window_manager.modal_handler_add(self)
+        bpy.ops.view3d.viewnumpad(type='TOP')
         return {'RUNNING_MODAL'}
 
 
@@ -232,18 +215,17 @@ class TIILTOperator(bpy.types.Operator):
         direction = obj['specifier']
         self.view_numpad(direction.upper())
 
-
-
     def add(self, dict):
         shape = dict['object']
-        
-        if dict['coord'] is None:
-            pos = (0,0,0)
+        object_position = dict['quantity']
+        if(object_position != 'NULL'):
+            pos = (object_position,0,0)
+            logging.debug('These are the coordinates: ')
+            logging.debug(pos)
         else:
-            pos = dict['coord']
+            pos = [0,0,0]
 
         bpy.context.scene.cursor_location = (pos[0], pos[1], pos[2])
-
         if(shape == 'cube'):
             bpy.ops.mesh.primitive_cube_add()
         elif (shape == 'monkey'):
@@ -258,37 +240,13 @@ class TIILTOperator(bpy.types.Operator):
             pass
 
 
-
-    #Renames an object
-    #obj_name: previous name
-    #new_name: new_name duh!
-
-    def rename_object(self, obj_name, new_name):
-        bpy.data.objects[object_name].name = new_name
-
-
-
-    #Moves an object
     def move_object(self, dict):
-        #deselect all object, select object being tranlated, move it
-        try:
-            obj_specifier = dict['object']
-        except:
-            print('Please specify the object')
+        #Moves an object from one location to another
+        obj_specifier = dict['object']
+        obj_location = dict['coord']
 
-        obj_name = find_object(obj_specifier)
+        find_object(obj_specifier, obj_location)
 
-        for obj in bpy.data.objects:
-            obj.select = False
-
-        bpy.data.objects[obj_name].select = True
-        bpy.ops.transform.tranlate(value = dict[position])
-        pass
-
-
-
-    def resize_object(self):
-        #find object with given properties, resize to new scale
         pass
 
     def rotate(self, x, y, z):
@@ -308,22 +266,19 @@ class TIILTOperator(bpy.types.Operator):
 
     def delete_object(self, dict):
         #Find object with given properties, delete object
-        obj_type = dict['object']
-        if dict['coords'] is not None:
-            obj_name = find_object(obj_type, dict['coords'])
-        else:
-            obj_name = find_object(obj_type)
-
-        if obj_name = 'Null':
-            print('Specify the specific' + obj_type + 'that you want to delete.')
-
+        obj_name = dict['object']
+        obj_location = dict['coord']
+        obj_name = find_object(obj_name, obj_location)
         select_object(obj_name)
 
         bpy.ops.object.delete(use_global)
 
         print('Object has been deleted')
 
-
+    def resize_object(self):
+        #find object with given properties, resize to new scale
+        pass
 
 
 bpy.utils.register_class(TIILTOperator)
+
