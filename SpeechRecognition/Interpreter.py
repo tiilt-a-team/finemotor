@@ -46,6 +46,8 @@ def text2int(textnum, numwords={}):
 
 def parse_phrase(phrase):
     parsed_phrase = dict.fromkeys(["verb", "object", "description", "quantity", "direction", "heresay", "coord"])
+    if phrase == 'quit':
+        return {'direction': [u''], 'description': [[], []], 'object': u'', 'heresay': None, 'coord': (0.0, 0.0), 'verb': u'quit', 'quantity': 0}
     doc = ''
     try:
         doc = nlp(unicode(phrase.lower(), encoding="utf-8"))
@@ -65,16 +67,13 @@ def parse_phrase(phrase):
     possible_direction = []
     here_say = False
     for ent in Et.match(doc):
-        # print(ent.label_, ent.text)
         if ent.label_ == u'QUANTITY':
             quantity.append(ent.text.lower())
         elif ent.label_ == u'SHAPE':
             possible_objects.append(ent.text.lower())
         elif ent.label_ == u'DIRECTION':
             possible_direction.append(ent.text.lower())
-    logging.debug(possible_direction)
     for np in doc.noun_chunks:
-        logging.debug(doc.noun_chunks)
         appended_direction = False
         found_shape = False
         if np.root.tag_ == 'PRP':
@@ -99,21 +98,15 @@ def parse_phrase(phrase):
                 if word.pos_ == 'ADJ':
                     temp_list[1].append(word.text.lower())
             adjectives.append(temp_list)
+
         if np.root.head.tag_ != 'IN':
             for child in np.root.head.children:
-                logging.debug(child.text.lower())
                 if child.text.lower() in possible_direction:
-                    logging.debug('inner if')
                     direction.append(child.text.lower())
                     appended_direction = True
             verbs.append(np.root.head.text.lower())
             if not appended_direction:
                 direction.append(u'')
-    # print('verbs: ', verbs)
-    # print('objects: ', objects)
-    # print('descriptors: ', adjectives)
-    # print('quantities: ', quantity)
-    # print('directions: ', direction)
     action_list = []
     for i in range(len(verbs)):
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,29 +116,23 @@ def parse_phrase(phrase):
         verb = verbs[i]
         parsed_phrase["verb"] = verb
         obj = ''
-        if i < len(objects):
+        if i < len(objects) and len(objects) > 0:
             obj = objects[i]
             parsed_phrase["object"] = obj
-        else:
-            #action_list.append(None)
-            #continue
-            return action_list
         adj = ''
-        if i < len(adjectives):
+        if i < len(adjectives) and len(adjectives) > 0:
             adj = adjectives[i]
         parsed_phrase["description"] = adj
         quant = ''
-        if i < len(quantity):
+        if i < len(quantity) and len(quantity) > 0:
             quant = quantity[i]
         parsed_phrase["quantity"] = text2int(''.join(quant.split(" ")[:-1]))
         dire = ''
-        if i < len(direction):
+        if i < len(direction) and len(direction) > 0:
             dire = direction[i]
         parsed_phrase["direction"] = direction
         action_list.append(take_action(verb, obj, adj, quant, dire, here_say))
-        logging.debug(parse_phrase)
     return parsed_phrase
-    #return action_list
 
 
 def take_action(verb, obj, desc, quantity, direction, here_say):
