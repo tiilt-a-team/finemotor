@@ -54,6 +54,14 @@ def processDirection(direction):
     else:
         return 'top'
 
+
+'''Selects the object that the user is staring at'''
+def gazed_object(dict):
+	coords = dict['coord']
+	obj_name =  find_object_by_coordinates(coords)
+	select_object(obj_name)
+
+'''Returns vector coordinates based on a quantity and direction. For example given 2 and top it returns (x_coordinate, quantity, z_coordinate) '''
 def coord_calc(quantity, direction):
     if direction == [u'top'] or direction == [u'up']:
         return [bpy.data.screens['Default'].scene.cursor_location[0], quantity, bpy.data.screens['Default'].scene.cursor_location[2]]
@@ -67,7 +75,7 @@ def coord_calc(quantity, direction):
         return [0,3,0]
 
 
-'''coordinate calculation for move command'''
+'''coordinate calculation for move command. Returns coordinates with ony the move direction specified'''
 
 def move_coord_calc(quantity, direction, obj_name):
     if direction == [u'top'] or direction == [u'up']:
@@ -84,9 +92,12 @@ def move_coord_calc(quantity, direction, obj_name):
 '''Calculates the distance betweent two points on the screen'''
 
 def calc_min_distance(obj1_loc, obj2_loc):
-    dist = (obj1_loc[0]-obj2_loc[0])**2 + (obj1_loc[1]-obj2_loc[1])**2 + (obj1_loc[2]-obj2_loc[2])**2
+    dist = (obj1_loc[0]-obj2_loc[0])**2 + (obj1_loc[1]-obj2_loc[1])**2
     return math.sqrt(dist)
 
+
+'''Given an object specifier such as the word 'cube' this method finds it and returns its name
+Only works if just one of that kind of object is on screen'''
 
 def find_object(obj_specifier):
     scene = bpy.context.scene
@@ -101,6 +112,21 @@ def find_object(obj_specifier):
         raise Exception('Please specify which ' + obj_specifier + ' you want.')
     else:
         return real_object.name
+
+
+def find_object_by_coordinates(coords):
+	scene = bpy.context.scene
+	min_dist = 100000000
+	real_object = None
+
+	for ob in scene.objects:
+		distance_b2n = calc_min_distance(coords, ob.location)
+		if distance_b2n < min_dist:
+			min_dist = distance_b2n
+			real_object = ob
+
+	return real_object.name
+
 
 '''Selects an object and makes it the active object
     obj_name : The name of the object as stored in blender
@@ -138,6 +164,7 @@ class TIILTOperator(bpy.types.Operator):
         self.view,
         self.delete,
         self.clear,
+        self.rename,
         ]
 
         self.commands = {f.__name__:f for f in _commands}
@@ -196,22 +223,13 @@ class TIILTOperator(bpy.types.Operator):
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
+'''changes the view direction of the screen'''
+
     def view(self, obj):
         dirct = processDirection(obj['direction'])
         bpy.ops.view3d.viewnumpad(type = dirct.upper())
 
-
-#bpy_extras.view3d_utils.region_2d_to_origin_3d(bpy.context.region, bpy.context.space_data.region_3d, (x_coordinate, y_coordinate), mathutils.Vector((0,0,0)))
-    def add_works(self, dict):
-        shape = dict['object']
-        coords = dict['coord']
-
-
-        mouse_vector = bpy_extras.view3d_utils.region_2d_to_location_3d(bpy.context.region, bpy.context.space_data.region_3d, mathutils.Vector((coords[0], bpy.data.scenes["Scene"].render.resolution_y - coords[1])), mathutils.Vector((0,0,0)))
-        #bpy_extras.view3d_utils.region_2d_to_origin_3d(bpy.context.region, bpy.context.space_data.region_3d, (700, 700), mathutils.Vector((0,0,0)))
-        bpy.ops.mesh.primitive_cube_add(location = mouse_vector)
-
-        pass
+'''adds an object to the screen'''
 
     def add(self, dict):
         shape = dict['object']
@@ -236,12 +254,13 @@ class TIILTOperator(bpy.types.Operator):
         else:
             pass
 
+'''kills the timer thus allowing control via blender interface'''
     def quit(self,otherStuff):
         bpy.context.window_manager.event_timer_remove(self._timer)
         return {'FINISHED'}
 
+'''moves an object from one point to another'''
     def move(self, dict):
-        #Moves an object from one location to another
         obj_specifier = dict['object'].title()
         print(obj_specifier)
 
@@ -249,6 +268,12 @@ class TIILTOperator(bpy.types.Operator):
         select_object(obj_name)
 
         bpy.ops.transform.translate(value=move_coord_calc(dict['quantity'], dict['direction'], obj_name))
+
+'''renames the selected/active object'''
+def rename(new_name):
+    bpy.data.objects[bpy.context.scene.objects.active.name].name = new_name
+
+'''rotates an object'''
 
     def rotate(self, x, y, z):
         bpy.ops.transform.rotate(z, y, x)
@@ -259,12 +284,14 @@ class TIILTOperator(bpy.types.Operator):
     def redo(self, dict):
         bpy.ops.ed.redo()
 
+'''clears all objects from the screen'''
     def clear(self):
         if not bpy.context.selected_objects:
             bpy.ops.object.select_all(actions = 'TOGGLE') 
         bpy.ops.object.select_all(actions = 'TOGGLE')
         bpy.ops.object.delete(use_global = False)
 
+'''deletes object from screen'''
     def delete(self, dict):
         #Find object with given properties, delete object
         obj_name = dict['object']
@@ -275,6 +302,7 @@ class TIILTOperator(bpy.types.Operator):
         bpy.ops.object.delete(use_global)
 
         print('Object has been deleted')
+
 
     def resize_object(self):
         #find object with given properties, resize to new scale
