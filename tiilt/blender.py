@@ -56,16 +56,9 @@ def processDirection(direction):
 
 
 '''Selects the object that the user is staring at'''
-<<<<<<< HEAD
 def gazed_object(pos):
     obj_name =  find_object_by_coordinates(pos)
     select_object(obj_name)
-=======
-def gazed_object(dict):
-	coords = dict['coord']
-	obj_name =  find_object_by_coordinates(coords)
-	select_object(obj_name)
->>>>>>> origin/master
 
 '''Returns vector coordinates based on a quantity and direction. For example given 2 and top it returns (x_coordinate, quantity, z_coordinate) '''
 def coord_calc(quantity, direction):
@@ -121,7 +114,6 @@ def find_object(obj_specifier):
 
 
 def find_object_by_coordinates(coords):
-<<<<<<< HEAD
     scene = bpy.context.scene
     min_dist = 100000000
     real_object = None
@@ -133,19 +125,6 @@ def find_object_by_coordinates(coords):
             real_object = ob
 
     return real_object.name
-=======
-	scene = bpy.context.scene
-	min_dist = 100000000
-	real_object = None
-
-	for ob in scene.objects:
-		distance_b2n = calc_min_distance(coords, ob.location)
-		if distance_b2n < min_dist:
-			min_dist = distance_b2n
-			real_object = ob
-
-	return real_object.name
->>>>>>> origin/master
 
 
 '''Selects an object and makes it the active object
@@ -243,7 +222,6 @@ class TIILTOperator(bpy.types.Operator):
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
-<<<<<<< HEAD
     '''changes the view direction of the screen'''
 
     def view_hold(self, obj):
@@ -256,16 +234,6 @@ class TIILTOperator(bpy.types.Operator):
         gazed_object(pos)
 
     '''adds an object to the screen'''
-=======
-'''changes the view direction of the screen'''
-
-    def view(self, obj):
-        dirct = processDirection(obj['direction'])
-        bpy.ops.view3d.viewnumpad(type = dirct.upper())
-
-'''adds an object to the screen'''
-
->>>>>>> origin/master
     def add(self, dict):
         shape = dict['object']
         obj_pos = dict['quantity']
@@ -290,20 +258,12 @@ class TIILTOperator(bpy.types.Operator):
         else:
             pass
 
-<<<<<<< HEAD
     '''kills the timer thus allowing control via blender interface'''
-=======
-'''kills the timer thus allowing control via blender interface'''
->>>>>>> origin/master
     def quit(self,otherStuff):
         bpy.context.window_manager.event_timer_remove(self._timer)
         return {'FINISHED'}
 
-<<<<<<< HEAD
     '''moves an object from one point to another'''
-=======
-'''moves an object from one point to another'''
->>>>>>> origin/master
     def move(self, dict):
         obj_specifier = dict['object'].title()
         print(obj_specifier)
@@ -313,19 +273,11 @@ class TIILTOperator(bpy.types.Operator):
 
         bpy.ops.transform.translate(value=move_coord_calc(dict['quantity'], dict['direction'], obj_name))
 
-<<<<<<< HEAD
     '''renames the selected/active object'''
     def rename(new_name):
         bpy.data.objects[bpy.context.scene.objects.active.name].name = new_name
 
     '''rotates an object'''
-=======
-'''renames the selected/active object'''
-def rename(new_name):
-    bpy.data.objects[bpy.context.scene.objects.active.name].name = new_name
-
-'''rotates an object'''
->>>>>>> origin/master
 
     def rotate(self, x, y, z):
         bpy.ops.transform.rotate(z, y, x)
@@ -336,22 +288,14 @@ def rename(new_name):
     def redo(self, dict):
         bpy.ops.ed.redo()
 
-<<<<<<< HEAD
     '''clears all objects from the screen'''
-=======
-'''clears all objects from the screen'''
->>>>>>> origin/master
     def clear(self):
         if not bpy.context.selected_objects:
             bpy.ops.object.select_all(actions = 'TOGGLE') 
         bpy.ops.object.select_all(actions = 'TOGGLE')
         bpy.ops.object.delete(use_global = False)
 
-<<<<<<< HEAD
     '''deletes object from screen'''
-=======
-'''deletes object from screen'''
->>>>>>> origin/master
     def delete(self, dict):
         #Find object with given properties, delete object
         obj_name = dict['object']
