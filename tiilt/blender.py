@@ -11,6 +11,8 @@ import bpy_extras.view3d_utils
 import pickle
 import time
 import numpy
+import unicodedata
+
 
 def read_command(transport):
     try:
@@ -19,8 +21,6 @@ def read_command(transport):
         print('Data has been received')
         if not line:
             return
-        #data = json.loads(line)
-
     except ValueError as e:
         logging.exception(e)
         raise IOError()
@@ -33,26 +33,6 @@ def read_command(transport):
         raise IOError()
 
     return cmd, data
-
-'''Calculates the correct coordinates for placing the cursor location based on a command that specifies
-pixel quantity and a direction'''
-def processDirection(direction):
-    if direction == [u'left']:
-        return 'left'
-    elif direction == [u'bottom'] or direction == [u'down']:
-        return 'bottom'
-    elif direction == [u'right']:
-        return 'right'
-    elif direction == [u'front']:
-        return 'front'
-    elif direction == [u'back']:
-        return 'back'
-    elif direction == [u'camera']:
-        return 'camera'
-    elif direction == [u'top'] or direction == [u'up']:
-        return 'top'
-    else:
-        return 'top'
 
 
 '''Selects the object that the user is staring at'''
@@ -71,12 +51,19 @@ def coord_calc(quantity, direction):
     elif direction == [u'left']:
         return [-(quantity), bpy.data.screens['Default'].scene.cursor_location[1], bpy.data.screens['Default'].scene.cursor_location[2]]
     else:
-        return [0,3,0]
+        return [0,0,0]
 
 
-'''coordinate calculation for move command. Returns coordinates with ony the move direction specified'''
+'''coordinate calculation for move command. Returns coord
+inates with ony the move direction specified'''
 
-def move_coord_calc(quantity, direction, obj_name):
+def move_coord_calc(coords, obj_location):
+    pos = bpy_extras.view3d_utils.region_2d_to_location_3d(bpy.context.region, bpy.context.space_data.region_3d, mathutils.Vector((coords[0], bpy.data.scenes["Scene"].render.resolution_y - coords[1])), mathutils.Vector((0,0,0)))
+    quantity = [pos[0]-obj_location[0], pos[1]-obj_location[1], 0]
+    return quantity
+
+
+def move_coord_calc2(quantity, direction, obj_name):
     if direction == [u'top'] or direction == [u'up']:
         return [0, quantity,0]
     elif direction == [u'bottom'] or direction == [u'down']:
@@ -115,7 +102,7 @@ def find_object(obj_specifier):
 
 def find_object_by_coordinates(coords):
     scene = bpy.context.scene
-    min_dist = 100000000
+    min_dist = sys.maxint
     real_object = None
 
     for ob in scene.objects:
@@ -124,7 +111,7 @@ def find_object_by_coordinates(coords):
             min_dist = distance_b2n
             real_object = ob
 
-    return real_object.name
+    return real_object.name   
 
 
 '''Selects an object and makes it the active object
@@ -164,6 +151,7 @@ class TIILTOperator(bpy.types.Operator):
         self.delete,
         self.clear,
         self.rename,
+        self.select,
         ]
 
         self.commands = {f.__name__:f for f in _commands}
@@ -224,11 +212,11 @@ class TIILTOperator(bpy.types.Operator):
 
     '''changes the view direction of the screen'''
 
-    def view_hold(self, obj):
-        dirct = processDirection(obj['direction'])
+    def view(self, obj):
+        unicode.normalize('NKFD', obj['direction']).encode('ascii', 'ignore').decode("utf-8")
         bpy.ops.view3d.viewnumpad(type = dirct.upper())
 
-    def view(self, dict):
+    def select(self, dict):
         coords = dict['coord']
         pos = bpy_extras.view3d_utils.region_2d_to_location_3d(bpy.context.region, bpy.context.space_data.region_3d, mathutils.Vector((coords[0], bpy.data.scenes["Scene"].render.resolution_y - coords[1])), mathutils.Vector((0,0,0)))
         gazed_object(pos)
@@ -258,35 +246,31 @@ class TIILTOperator(bpy.types.Operator):
         else:
             pass
 
-    '''kills the timer thus allowing control via blender interface'''
+    '''kills the timer to allow control via blender interface
+        NEED TO PRESS ESC KEY FROM BLENDER INTERFACE TO COMPLETELY GAIN CONTROL
+    '''
     def quit(self,otherStuff):
         bpy.context.window_manager.event_timer_remove(self._timer)
         return {'FINISHED'}
 
-    '''moves an object from one point to another'''
+
+    '''Moves the selected object to the point where the user is staring at'''
     def move(self, dict):
-        obj_specifier = dict['object'].title()
-        print(obj_specifier)
-
-        obj_name = find_object(obj_specifier)
-        select_object(obj_name)
-
-        bpy.ops.transform.translate(value=move_coord_calc(dict['quantity'], dict['direction'], obj_name))
+        obj_location = mathutils.Vector(bpy.context.scene.objects.active.location)
+        bpy.ops.transform.translate(value = move_coord_calc(dict['coord'], obj_location))
 
     '''renames the selected/active object'''
     def rename(new_name):
         bpy.data.objects[bpy.context.scene.objects.active.name].name = new_name
 
-    '''rotates an object'''
-
-    def rotate(self, x, y, z):
-        bpy.ops.transform.rotate(z, y, x)
-
+    '''undo the previous command'''
     def undo(self, dict):
         bpy.ops.ed.undo()
 
+    '''redo the previous command'''
     def redo(self, dict):
         bpy.ops.ed.redo()
+
 
     '''clears all objects from the screen'''
     def clear(self):
@@ -295,22 +279,12 @@ class TIILTOperator(bpy.types.Operator):
         bpy.ops.object.select_all(actions = 'TOGGLE')
         bpy.ops.object.delete(use_global = False)
 
-    '''deletes object from screen'''
-    def delete(self, dict):
-        #Find object with given properties, delete object
-        obj_name = dict['object']
-        obj_location = dict['coord']
-        obj_name = find_object(obj_name, obj_location)
-        select_object(obj_name)
 
+    '''delete the selected object from screen'''
+    def delete(self, dict):
         bpy.ops.object.delete(use_global)
 
-        print('Object has been deleted')
 
-
-    def resize_object(self):
-        #find object with given properties, resize to new scale
-        pass
 
 
 bpy.utils.register_class(TIILTOperator)
