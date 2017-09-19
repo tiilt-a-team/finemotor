@@ -102,7 +102,7 @@ def find_object(obj_specifier):
 
 def find_object_by_coordinates(coords):
     scene = bpy.context.scene
-    min_dist = sys.maxint
+    min_dist = 1000000000
     real_object = None
 
     for ob in scene.objects:
@@ -145,20 +145,20 @@ class TIILTOperator(bpy.types.Operator):
         self.undo,
         self.redo,
         self.add,
-        self.move,
+        #self.move,
         self.quit,
         self.view,
         self.delete,
         self.clear,
         self.rename,
-        self.select,
+        self.change,
+        #self.select,
         ]
 
         self.commands = {f.__name__:f for f in _commands}
         self._timer = None
 
         self.current_mode = 'OBJECT'
-
     def __del__(self):
         print("Ending")
         self.transport.close()
@@ -212,11 +212,11 @@ class TIILTOperator(bpy.types.Operator):
 
     '''changes the view direction of the screen'''
 
-    def view(self, obj):
+    def view_temp(self, obj):
         unicode.normalize('NKFD', obj['direction']).encode('ascii', 'ignore').decode("utf-8")
         bpy.ops.view3d.viewnumpad(type = dirct.upper())
 
-    def select(self, dict):
+    def view(self, dict):
         coords = dict['coord']
         pos = bpy_extras.view3d_utils.region_2d_to_location_3d(bpy.context.region, bpy.context.space_data.region_3d, mathutils.Vector((coords[0], bpy.data.scenes["Scene"].render.resolution_y - coords[1])), mathutils.Vector((0,0,0)))
         gazed_object(pos)
@@ -255,7 +255,7 @@ class TIILTOperator(bpy.types.Operator):
 
 
     '''Moves the selected object to the point where the user is staring at'''
-    def move(self, dict):
+    def change(self, dict):
         obj_location = mathutils.Vector(bpy.context.scene.objects.active.location)
         bpy.ops.transform.translate(value = move_coord_calc(dict['coord'], obj_location))
 
