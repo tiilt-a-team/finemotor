@@ -13,6 +13,11 @@ global subs
 global directory
 
 def main():
+	parser = argparse.ArgumentParser(description='Specifies options (Watson, PocketSphinx, Text Input) for command input.')
+	parser.add_argument('--input', dest='input_method', default='text', help='Specify the input method that will be used (default: sphinx)', choices = ['watson', 'sphinx','text'])
+
+	args = vars(parser.parse_args())
+	input_method = args['input_method']
 	global subs
 	global directory
 
@@ -44,7 +49,7 @@ def main():
 			exit()
 		
 		subs.append(eye_tribe)
-		recognition_sockets = subprocess.Popen(['python', 'RecognitionSockets.py'], cwd='SpeechRecognition', stdout=subprocess.PIPE, shell=False)
+		recognition_sockets = subprocess.Popen(['python', 'RecognitionSockets.py', '--input', input_method], cwd='SpeechRecognition', stdout=subprocess.PIPE, shell=False)
 		subs.append(recognition_sockets)
 
 		#find_dir()
