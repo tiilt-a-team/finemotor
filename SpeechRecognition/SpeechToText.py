@@ -2,6 +2,7 @@ from __future__ import print_function
 
 from pocketsphinx.pocketsphinx import *
 from sphinxbase.sphinxbase import *
+from watson_developer_cloud import SpeechToTextV1
 
 import os
 import pyaudio
@@ -14,11 +15,30 @@ import math
 import speech_recognition as sr
 
 """
-Written by Aaron Karp, 2017
+Written by Timothy Mwiti, 2017
 Adapted from Sophie Li, 2016
 http://blog.justsophie.com/python-speech-to-text-with-pocketsphinx/
 """
 
+keys = ['cube', 'add', 'move', 'circle', 'monkey', 'rotate']
+
+def speech_2_text(file_name):
+    speech_to_text = SpeechToTextV1(
+        username='',
+        password='',
+        x_watson_learning_opt_out=False
+    )
+    speech_to_text.get_model('en-US_BroadbandModel')
+    with open(file_name, 'rb') as audio_file:
+        results = speech_to_text.recognize(
+            audio_file, content_type='audio/wav', timestamps=True,
+            word_confidence=True, keywords = keys, keywords_threshold = 1.0)
+        first_array = results["results"]
+        transcript = ''
+        for element in first_array:
+            transcript += element["alternatives"][0]["transcript"] + ' '
+
+        return transcript
 
 class SpeechDetector:
     def __init__(self):
@@ -28,16 +48,16 @@ class SpeechDetector:
         self.CHANNELS = 1
         self.RATE = 16000
 
-        self.SILENCE_LIMIT = 2  # Silence limit in seconds. The max ammount of seconds where
+        self.SILENCE_LIMIT = 2.5  # Silence limit in seconds. The max ammount of seconds where
         # only silence is recorded. When this time passes the
         # recording finishes and the file is decoded
 
-        self.PREV_AUDIO = 0.8  # Previous audio (in seconds) to prepend. When noise
+        self.PREV_AUDIO = 0.5  # Previous audio (in seconds) to prepend. When noise
         # is detected, how much of previously recorded audio is
         # prepended. This helps to prevent chopping the beginning
         # of the phrase.
 
-        self.THRESHOLD = 4500
+        self.THRESHOLD = 2500
         self.num_phrases = -1
 
         MODELDIR = "libraries/pocketsphinx/model"
@@ -77,12 +97,8 @@ class SpeechDetector:
         print(" Average audio intensity is ", r)
         stream.close()
         p.terminate()
+        return r
 
-        if r < 3000:
-            # self.THRESHOLD = 3500
-            self.THRESHOLD = min(r * 3 / 2, 3500)  # Good for Yeti mic in quiet room
-        else:
-            self.THRESHOLD = r + 100
 
     def save_speech(self, data, p):
         """
@@ -144,7 +160,7 @@ class SpeechDetector:
         best_score = best_phrase.split(' ')[-1:]
         return ' '.join(best_phrase.split(' ')[:-4])
 
-    def run(self):
+    def run(self, input_method):
         """
         Listens to Microphone, extracts phrases from it and calls pocketsphinx
         to decode the sound
@@ -181,10 +197,13 @@ class SpeechDetector:
                 print("Finished recording, decoding phrase")
                 filename = self.save_speech(list(prev_audio) + audio2send, p)
                 # r = self.decode_phrase(filename)  # Pocketsphinx Decoder
-                r = self.decode_phrase_sphinx(filename)  # Sphinx Decoder
-                print()
-                print("TOP 10 DETECTED: ", r)
-                print()
+                #r = self.decode_phrase_sphinx(filename)  # Sphinx Decoder
+                
+                if(input_method == 'watson'):
+                    r = speech_2_text(filename)
+                else:
+                    r = self.decode_phrase_sphinx(filename)
+                
 
                 # best_phrase = self.check_phrase(r)  # Pocketsphinx Decoder
                 best_phrase = r  # Sphinx Decoder
@@ -196,7 +215,7 @@ class SpeechDetector:
                 stream.close()
                 # Reset all
                 print("Ending Loop")
-                return best_phrase
+                return r
 
             else:
                 prev_audio.append(cur_data)
@@ -208,4 +227,5 @@ class SpeechDetector:
 
 if __name__ == "__main__":
     sd = SpeechDetector()
+    sd.setup_mic()
     sd.run()
