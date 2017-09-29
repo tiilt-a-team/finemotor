@@ -114,7 +114,7 @@ if __name__ == '__main__':
                     cmd = raw_input('Type a Command: ').strip().lower()
                 else:
                     cmd = sd.run(input_method)
-
+                logging.debug(cmd)
                 if not cmd:
                     pass
                 elif cmd == exit_cmd:

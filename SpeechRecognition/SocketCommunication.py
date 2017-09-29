@@ -65,13 +65,13 @@ def send_command(name, eye_info, data={}):
 
 def interpret_command(phrase, eye_data):
     parsed = Inter.parse_phrase(phrase)
-    if parsed['verb'] in synonyms:
-        parsed['verb'] = synonyms[parsed['verb']]
-    print parsed
+    
     if parsed is None:
         return False
-    else:
-        logging.debug(parsed)
+    
+    if parsed['verb'] in synonyms:
+        parsed['verb'] = synonyms[parsed['verb']]
+        
     try:
         parsed['coord'] = eye_data.get()
         send_command(parsed['verb'], parsed)
