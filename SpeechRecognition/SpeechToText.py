@@ -23,8 +23,8 @@ http://blog.justsophie.com/python-speech-to-text-with-pocketsphinx/
 
 def speech_2_text(file_name):
     speech_to_text = SpeechToTextV1(
-        username='56d22ed7-8b76-48de-babe-0cd51d16dc82',
-        password='AV0TrY5xwuXS',
+        username='',
+        password='',
         x_watson_learning_opt_out=False
     )
     speech_to_text.get_model('en-US_BroadbandModel')
