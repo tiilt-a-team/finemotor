@@ -40,6 +40,17 @@ def gazed_object(pos):
     obj_name =  find_object_by_coordinates(pos)
     select_object(obj_name)
 
+
+
+def select_object(obj_name):
+    curr_obj = bpy.context.selected_objects
+    
+    if len(curr_obj) > 0:
+        bpy.ops.object.select_all(action = 'TOGGLE')
+    
+    bpy.context.scene.objects.active = bpy.data.objects[obj_name]
+    bpy.data.objects[obj_name].select = True
+
 '''Returns vector coordinates based on a quantity and direction. For example given 2 and top it returns (x_coordinate, quantity, z_coordinate) '''
 def coord_calc(quantity, direction):
     if direction == [u'top'] or direction == [u'up']:
@@ -82,23 +93,6 @@ def calc_min_distance(obj1_loc, obj2_loc):
     return math.sqrt(dist)
 
 
-'''Given an object specifier such as the word 'cube' this method finds it and returns its name
-Only works if just one of that kind of object is on screen'''
-
-def find_object(obj_specifier):
-    scene = bpy.context.scene
-    obj_counter = 0;
-    real_object = None
-    for ob in scene.objects:
-        if ob.name.startswith(obj_specifier):
-            real_object = ob
-            obj_counter = obj_counter + 1
-
-    if obj_counter > 1 or real_object is None:
-        raise Exception('Please specify which ' + obj_specifier + ' you want.')
-    else:
-        return real_object.name
-
 
 def find_object_by_coordinates(coords):
     scene = bpy.context.scene
@@ -112,21 +106,6 @@ def find_object_by_coordinates(coords):
             real_object = ob
 
     return real_object.name   
-
-
-'''Selects an object and makes it the active object
-    obj_name : The name of the object as stored in blender
-'''
-def select_object(obj_name):
-    curr_obj = bpy.context.selected_objects
-    
-    if len(curr_obj) > 0:
-        bpy.ops.object.select_all(action = 'TOGGLE')
-    
-    bpy.context.scene.objects.active = bpy.data.objects[obj_name]
-    bpy.data.objects[obj_name].select = True
-
-
 
 
 class TIILTOperator(bpy.types.Operator):
@@ -145,14 +124,13 @@ class TIILTOperator(bpy.types.Operator):
         self.undo,
         self.redo,
         self.add,
-        #self.move,
+        self.move,
         self.quit,
         self.view,
         self.delete,
         self.clear,
         self.rename,
-        self.change,
-        #self.select,
+        self.select,
         ]
 
         self.commands = {f.__name__:f for f in _commands}
@@ -212,11 +190,11 @@ class TIILTOperator(bpy.types.Operator):
 
     '''changes the view direction of the screen'''
 
-    def view_temp(self, obj):
+    def view(self, obj):
         unicode.normalize('NKFD', obj['direction']).encode('ascii', 'ignore').decode("utf-8")
         bpy.ops.view3d.viewnumpad(type = dirct.upper())
 
-    def view(self, dict):
+    def select(self, dict):
         coords = dict['coord']
         pos = bpy_extras.view3d_utils.region_2d_to_location_3d(bpy.context.region, bpy.context.space_data.region_3d, mathutils.Vector((coords[0], bpy.data.scenes["Scene"].render.resolution_y - coords[1])), mathutils.Vector((0,0,0)))
         gazed_object(pos)
@@ -255,7 +233,7 @@ class TIILTOperator(bpy.types.Operator):
 
 
     '''Moves the selected object to the point where the user is staring at'''
-    def change(self, dict):
+    def move(self, dict):
         obj_location = mathutils.Vector(bpy.context.scene.objects.active.location)
         bpy.ops.transform.translate(value = move_coord_calc(dict['coord'], obj_location))
 
@@ -283,7 +261,6 @@ class TIILTOperator(bpy.types.Operator):
     '''delete the selected object from screen'''
     def delete(self, dict):
         bpy.ops.object.delete(use_global)
-
 
 
 

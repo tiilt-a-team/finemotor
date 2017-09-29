@@ -116,7 +116,6 @@ if __name__ == '__main__':
                     cmd = sd.run(input_method)
 
                 if not cmd:
-                    print('Command has not been entered Tim!!!!')
                     pass
                 elif cmd == exit_cmd:
                     break
