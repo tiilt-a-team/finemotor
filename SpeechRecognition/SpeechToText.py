@@ -20,19 +20,18 @@ Adapted from Sophie Li, 2016
 http://blog.justsophie.com/python-speech-to-text-with-pocketsphinx/
 """
 
-keys = ['cube', 'add', 'move', 'circle', 'monkey', 'rotate']
 
 def speech_2_text(file_name):
     speech_to_text = SpeechToTextV1(
-        username='',
-        password='',
+        username='56d22ed7-8b76-48de-babe-0cd51d16dc82',
+        password='AV0TrY5xwuXS',
         x_watson_learning_opt_out=False
     )
     speech_to_text.get_model('en-US_BroadbandModel')
     with open(file_name, 'rb') as audio_file:
         results = speech_to_text.recognize(
             audio_file, content_type='audio/wav', timestamps=True,
-            word_confidence=True, keywords = keys, keywords_threshold = 1.0)
+            word_confidence=True)
         first_array = results["results"]
         transcript = ''
         for element in first_array:
