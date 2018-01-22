@@ -34,7 +34,7 @@ def main():
 		root.withdraw()
 		root.update()
 		orig_directory = os.getcwd()
-		directory = tkFileDialog.askdirectory(initialdir='.')
+		directory = "C:\\Users\\tiilt1\\Desktop\\blenderStuff\\BlenderFoundation\\blender"
 		while not directory:
 			time.sleep(0.1)
 		root.update()
