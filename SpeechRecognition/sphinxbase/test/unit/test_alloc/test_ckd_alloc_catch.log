@@ -1,2 +1,0 @@
-calloc(-1,-1) failed from test_ckd_alloc_catch.c(21)
-Successfully caught bad allocation!
